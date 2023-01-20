@@ -9,6 +9,7 @@ const gui = new dat.GUI();
 
 const guiEngine = gui.addFolder('Engine');
 const guiAudio = gui.addFolder('Audio');
+guiEngine.open();
 
 guiEngine.add(e, 'throttle', 0, 1).name('Throttle');
 guiEngine.add(e, 'rpm', 0, 8000).name('RPM').listen();
@@ -25,7 +26,7 @@ document.addEventListener('click', async () => {
         console.log(node);
 
         guiAudio.add(node.gain.gain, 'value', 0, 1).name(`${key}: volume`).listen();
-        guiAudio.add(node.audio.detune, 'value', -1200, 1200).name(`${key}: rate`).listen();
+        guiAudio.add(node.audio.detune, 'value', -1200, 1200).name(`${key}: pitch`).listen();
     }
 
     guiAudio.open();
@@ -48,10 +49,8 @@ function update(time: DOMHighResTimeStamp): void {
     delta = (currentTime - lastTime) / 1000;
 
     e.update(delta);
-
-    if (a.ctx) {
-        a.samples['on_high'].audio.detune.value = e.rpm * 0.15;
-    }
+    if (a.ctx)
+        e.applySounds(a.samples);
 
     lastTime = currentTime;
 }

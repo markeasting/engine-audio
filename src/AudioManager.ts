@@ -1,6 +1,7 @@
 
 const sources: Record<string, string> = {
-    on_high: 'audio/BAC_Mono_onhigh.wav'
+    on_high: 'audio/BAC_Mono_onhigh.wav',
+    off_high: 'audio/BAC_Mono_offveryhigh.wav'
 }
 
 export class DynamicAudioNode {
@@ -40,7 +41,7 @@ export class AudioManager {
         audio.loop = true;
 
         const gain = new GainNode(this.ctx);
-        gain.gain.value = 1.0;
+        gain.gain.value = 0.0;
 
         audio
             .connect(gain)
