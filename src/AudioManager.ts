@@ -22,7 +22,7 @@ export class AudioManager {
 
         this.ctx = new AudioContext();
         this.volume = new GainNode(this.ctx);
-        this.volume.gain.value = 0.0;
+        this.volume.gain.value = 0.2;
 
         for (const key in sources) {
             this.samples[key] = await this.add(sources[key]);
