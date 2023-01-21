@@ -3,6 +3,9 @@ import { clamp } from "./util/clamp";
 
 export class Engine {
 
+    gear = 0;
+    gears = 6;
+
     throttle = 0;
     rpm = 1000;
 
@@ -36,6 +39,9 @@ export class Engine {
             const ratio = clamp((t - 0) / (this.limiter_delay - 0), 0, 1);
             this.throttle *= ratio;
         }
+
+        if (this.gear > 0)
+            dt /= Math.pow(this.gear / this.gears * 5, 2)
 
         /* Integrate */
         this.rpm += Math.pow(this.throttle, 1.2) * this.torque * (100 * dt);

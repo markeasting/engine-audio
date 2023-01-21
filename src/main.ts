@@ -1,9 +1,10 @@
 import * as dat from 'dat.gui';
 import { AudioManager } from "./AudioManager";
 import { Engine } from './Engine';
+import { clamp } from './util/clamp';
 
 const a = new AudioManager();
-const e = new Engine();
+const engine = new Engine();
 
 const gui = new dat.GUI();
 
@@ -11,8 +12,9 @@ const guiEngine = gui.addFolder('Engine');
 const guiAudio = gui.addFolder('Audio');
 guiEngine.open();
 
-guiEngine.add(e, 'throttle', 0, 1).name('Throttle');
-guiEngine.add(e, 'rpm', 0, 8000).name('RPM').listen();
+guiEngine.add(engine, 'gear', 0, 6).name('GEAR').listen();
+guiEngine.add(engine, 'throttle', 0, 1).name('Throttle');
+guiEngine.add(engine, 'rpm', 0, 8000).name('RPM').listen();
 
 document.addEventListener('click', async () => {
     
@@ -33,6 +35,22 @@ document.addEventListener('click', async () => {
 
 }, {once : true})
 
+document.addEventListener('keypress', e => {
+    if (e.code == 'Space')
+        engine.throttle = 1.0;
+})
+document.addEventListener('keyup', e => {
+    console.log(e);
+    if (e.code == 'Space')
+        engine.throttle = 0.0;
+    if (e.code.startsWith('Digit')) {
+        const nextGear = +e.key;
+        engine.rpm = nextGear > engine.gear 
+            ? 4200 + engine.gear * 100
+            : engine.limiter;
+        engine.gear = clamp(nextGear, 0, engine.gears);
+    }
+})
 
 let 
     lastTime = (new Date()).getTime(),
@@ -48,9 +66,9 @@ function update(time: DOMHighResTimeStamp): void {
     currentTime = (new Date()).getTime();
     delta = (currentTime - lastTime) / 1000;
 
-    e.update(currentTime, delta);
+    engine.update(currentTime, delta);
     if (a.ctx)
-        e.applySounds(a.samples);
+        engine.applySounds(a.samples);
 
     lastTime = currentTime;
 }
