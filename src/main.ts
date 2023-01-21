@@ -15,6 +15,7 @@ guiEngine.open();
 guiEngine.add(engine, 'gear', 0, 6).name('GEAR').listen();
 guiEngine.add(engine, 'throttle', 0, 1).name('Throttle');
 guiEngine.add(engine, 'rpm', 0, 8000).name('RPM').listen();
+guiEngine.add(engine, 'wheel_torque', 0, 8000).name('Output').listen();
 
 document.addEventListener('click', async () => {
     
@@ -41,13 +42,13 @@ document.addEventListener('keypress', e => {
 document.addEventListener('keyup', e => {
     if (e.code == 'Space')
         engine.throttle = 0.0;
-        
+
     if (e.code.startsWith('Digit')) {
         const nextGear = +e.key;
         engine.rpm = nextGear > engine.gear 
             ? (engine.rpm * 0.6) + engine.gear * 150
             : (engine.rpm * 1.5)
-        engine.gear = clamp(nextGear, 0, engine.gears);
+        engine.gear = clamp(nextGear, 0, engine.gears.length);
     }
 })
 
