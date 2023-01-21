@@ -48,7 +48,7 @@ function update(time: DOMHighResTimeStamp): void {
     currentTime = (new Date()).getTime();
     delta = (currentTime - lastTime) / 1000;
 
-    e.update(delta);
+    e.update(currentTime, delta);
     if (a.ctx)
         e.applySounds(a.samples);
 

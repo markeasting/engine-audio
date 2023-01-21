@@ -1,7 +1,10 @@
 
 const sources: Record<string, string> = {
     on_high: 'audio/BAC_Mono_onhigh.wav',
-    off_high: 'audio/BAC_Mono_offveryhigh.wav'
+    off_high: 'audio/BAC_Mono_offveryhigh.wav',
+
+    off_low: 'audio/BAC_Mono_offlow.wav',
+    on_low: 'audio/BAC_Mono_onlow.wav',
 }
 
 export class DynamicAudioNode {
@@ -31,6 +34,10 @@ export class AudioManager {
         
         if (this.ctx.state === 'suspended')
             this.ctx.resume();
+        
+        // window.addEventListener('click', () => {
+        //     this.volume.gain.value = 0;
+        // })
     }
 
     async add(source: string): Promise<DynamicAudioNode> {
