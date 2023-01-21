@@ -16,7 +16,8 @@ export class Engine {
 
     /* Gears */
     gear = 0;
-    gears = [12/38, 14/33, 15/27, 18/25, 24/27, 24/24];
+    gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
+    final_drive = 3.44;
 
     /* Limiter */
     limiter_ms = 75;     // Hard cutoff time
@@ -61,9 +62,9 @@ export class Engine {
         //     torque += 999 * rIdle;
 
         /* Gear ratios */
-        const gearRatio = this.gear > 0 ? this.gears[this.gear-1] : 0;
-        const engineTorque = torque; // * (1-gearRatio);
-        const wheelTorque = gearRatio > 0 ? torque / gearRatio : 0;
+        const gearRatio = (this.gear > 0 ? this.gears[this.gear-1] : 0) * this.final_drive;
+        const wheelTorque = gearRatio > 0 ? torque * gearRatio : 0;
+        const engineTorque = gearRatio > 0 ? torque / gearRatio : torque;
 
         /* Integrate */
         const a = engineTorque/this.flywheel_inertia;

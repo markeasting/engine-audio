@@ -15,7 +15,7 @@ guiEngine.open();
 guiEngine.add(engine, 'gear', 0, 6).name('GEAR').listen();
 guiEngine.add(engine, 'throttle', 0, 1).name('Throttle');
 guiEngine.add(engine, 'rpm', 0, 8000).name('RPM').listen();
-guiEngine.add(engine, 'wheel_torque', 0, 8000).name('Output').listen();
+guiEngine.add(engine, 'wheel_torque', 0, 8000).name('Output Nm').listen();
 
 document.addEventListener('click', async () => {
     
