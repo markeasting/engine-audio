@@ -40,8 +40,9 @@ export class Engine {
             this.throttle *= ratio;
         }
 
-        if (this.gear > 0)
-            dt /= Math.pow(this.gear / this.gears * 5, 2)
+        if (this.gear > 0) {
+            dt /= Math.pow((this.gear / this.gears) * this.gears, 2)
+        }
 
         /* Integrate */
         this.rpm += Math.pow(this.throttle, 1.2) * this.torque * (100 * dt);
@@ -50,31 +51,25 @@ export class Engine {
     }
 
     applySounds(samples: Record<string, DynamicAudioNode>) {
-
-        // const crossFadeStart = 3000;
-        // const crossFadeEnd = 4500;
-        // const x = clamp((this.rpm - crossFadeStart) / (crossFadeEnd - crossFadeStart), 0, 1);
         
-        // /* Equal power crossfade */
-        // const gain1 = Math.cos((1.0 - x) * 0.5 * Math.PI);
-        // const gain2 = Math.cos(x * 0.5 * Math.PI);
-        const { gain1: hiGain, gain2: loGain } = this.crossFade(this.rpm, 3000, 4500);
-        const { gain1: onGain, gain2: offGain } = this.crossFade(this.throttle, 0, 1);
+        const { gain1: high, gain2: low } = this.crossFade(this.rpm, 3000, 4500);
+        const { gain1: on, gain2: off } = this.crossFade(this.throttle, 0, 1);
 
-        const pitch = this.rpm * 0.17 - 100
+        const pitch = this.rpm * 0.18 - 200;
+
         /* HIGH */
-        samples['on_high'].audio.detune.value = pitch;
-        samples['on_high'].gain.gain.value = onGain * hiGain;
+        samples['on_high'].audio.detune.value = pitch; // - 800;
+        samples['on_high'].gain.gain.value = on * high;
         
-        samples['off_high'].audio.detune.value = pitch;
-        samples['off_high'].gain.gain.value = offGain * hiGain;
+        samples['off_high'].audio.detune.value = pitch; // - 900;
+        samples['off_high'].gain.gain.value = off * high;
 
-        /* LOW */
-        samples['on_low'].audio.detune.value = pitch;
-        samples['on_low'].gain.gain.value = onGain * loGain;
+        // /* LOW */
+        samples['on_low'].audio.detune.value = pitch; //;
+        samples['on_low'].gain.gain.value = on * low;
         
-        samples['off_low'].audio.detune.value = pitch;
-        samples['off_low'].gain.gain.value = offGain * loGain;
+        samples['off_low'].audio.detune.value = pitch; // + 100;
+        samples['off_low'].gain.gain.value = off * low;
     }
 
     crossFade(rpm: number, start: number, end: number) {
