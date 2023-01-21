@@ -1,29 +1,40 @@
 import { AudioManager, DynamicAudioNode } from "./AudioManager";
 import { clamp } from "./util/clamp";
+import { ratio } from "./util/ratio";
 
 export class Engine {
 
-    gear = 0;
-    gears = 6;
-
-    throttle = 0;
-    rpm = 1000;
-
+    /* Base settings */
     idle = 1000;
     soft_limiter = 7600;
     limiter = 8000;
+    rpm = this.idle;
 
+    /* Clutch/flywheel */
+    flywheel_inertia = 0.5 * 10 * 0.15^2; /* 0.5 * MR^2 */
+    clutch = 0;
+
+    /* Gears */
+    gear = 0;
+    gears = [12/38, 14/33, 15/27, 18/25, 24/27, 24/24];
+
+    /* Limiter */
     limiter_ms = 75;     // Hard cutoff time
     limiter_delay = 150; // Time while feeding throttle back in
     #last_limiter = 0;
 
-    torque = 100;
-    engine_braking = 100;
+    /* Torque curves */
+    torque = 330; // Nm
+    engine_braking = 40;
+    throttle = 0;
+
+    /* Output */
+    wheel_torque = 0;
     
     update(time: number, dt: number) {
-        dt = dt * 1.0;
 
-        const ratio = clamp((this.rpm - this.idle) / (this.limiter - this.idle), 0, 1);
+        // const r = ratio(this.rpm, this.idle, this.limiter);
+        // const rIdle = ratio(this.rpm, this.idle, 0);
         
         /* Limiter */
         // if (this.rpm >= this.soft_limiter) {
@@ -40,14 +51,29 @@ export class Engine {
             this.throttle *= ratio;
         }
 
-        if (this.gear > 0) {
-            dt /= Math.pow((this.gear / this.gears) * this.gears, 2)
-        }
+        /* Torque */
+        const t1 = Math.pow(this.throttle, 1.2) * this.torque;
+        const t2 = Math.pow(1-this.throttle, 1.2) * this.engine_braking;
+        const torque = t1 - t2;
+        
+        /* Idle adjustment */
+        // if (this.gear == 0 && this.rpm < this.idle)
+        //     torque += 999 * rIdle;
+
+        /* Gear ratios */
+        const gearRatio = this.gear > 0 ? this.gears[this.gear-1] : 0;
+        const engineTorque = torque; // * (1-gearRatio);
+        const wheelTorque = gearRatio > 0 ? torque / gearRatio : 0;
 
         /* Integrate */
-        this.rpm += Math.pow(this.throttle, 1.2) * this.torque * (100 * dt);
-        this.rpm -= (1-this.throttle) * (this.engine_braking * Math.pow(ratio, 1)) * (100 * dt);
+        const a = engineTorque/this.flywheel_inertia;
+        const dOmega = a * dt;
+
+        this.rpm += (60 * dOmega) / 2 * Math.PI;
         this.rpm = clamp(this.rpm, 0, this.limiter);
+
+        /* Output */
+        this.wheel_torque = wheelTorque;
     }
 
     applySounds(samples: Record<string, DynamicAudioNode>) {
