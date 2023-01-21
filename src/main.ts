@@ -25,7 +25,6 @@ document.addEventListener('click', async () => {
 
     for (const key in a.samples) {
         const node = a.samples[key]!;
-        console.log(node);
 
         guiAudio.add(node.gain.gain, 'value', 0, 1).name(`${key}: volume`).listen();
         guiAudio.add(node.audio.detune, 'value', -1200, 1200).name(`${key}: pitch`).listen();
@@ -40,14 +39,14 @@ document.addEventListener('keypress', e => {
         engine.throttle = 1.0;
 })
 document.addEventListener('keyup', e => {
-    console.log(e);
     if (e.code == 'Space')
         engine.throttle = 0.0;
+        
     if (e.code.startsWith('Digit')) {
         const nextGear = +e.key;
         engine.rpm = nextGear > engine.gear 
-            ? 4200 + engine.gear * 100
-            : engine.limiter;
+            ? (engine.rpm * 0.6) + engine.gear * 150
+            : (engine.rpm * 1.5)
         engine.gear = clamp(nextGear, 0, engine.gears);
     }
 })
