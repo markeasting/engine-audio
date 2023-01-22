@@ -6,23 +6,16 @@ export class Engine {
 
     /* Base settings */
     idle = 1000;
-    soft_limiter = 7500;
-    limiter = 8000;
+    limiter = 8800;
+    soft_limiter = this.limiter * 0.95;
     rpm = this.idle;
+
+    inertia = 0.5 * 10 * 0.1^2; /* 0.5 * MR^2 */
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
     limiter_delay = 200; // Time while feeding throttle back in
     #last_limiter = 0;
-
-    /* Clutch/flywheel */
-    flywheel_inertia = 0.5 * 10 * 0.1^2; /* 0.5 * MR^2 */
-    clutch = 0;
-
-    // /* Gears */
-    // gear = 0;
-    // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
-    // final_drive = 3.44;
 
     /* Torque curves */
     torque = 330; // Nm
@@ -30,10 +23,21 @@ export class Engine {
     throttle = 0;
 
     /* Output */
+    output_angular_accel = 0;
     output_torque = 0;
+
+    /* Integration state */
+    angle: number = 0;
+    alpha: number = 0;
+    omega: number = 0;
+
+    omega_max: number = 0;
 
     constructor(config: Partial<Engine>) {
         Object.assign(this, config);
+
+        this.omega_max = (2 * Math.PI * this.limiter) / 60;
+        console.log(this.omega_max);
     }
     
     update(time: number, dt: number) {
@@ -56,28 +60,38 @@ export class Engine {
 
         /* Idle adjustment */
         let idleTorque = 0;
-        if (this.throttle < 0.1 && this.rpm < this.idle * 1.5) {
-            const rIdle = ratio(this.rpm, this.idle * 0.9, this.idle);
-            idleTorque = (1-rIdle) * this.engine_braking * 10;
-        }
+        // if (this.throttle < 0.1 && this.rpm < this.idle * 1.5) {
+        //     const rIdle = ratio(this.rpm, this.idle * 0.9, this.idle);
+        //     idleTorque = (1-rIdle) * this.engine_braking * 10;
+        // }
         
         /* Torque */
         const t1 = Math.pow(this.throttle, 1.2) * this.torque;
         const t2 = Math.pow(1-this.throttle, 1.2) * this.engine_braking;
         const torque = t1 - t2 + idleTorque;
-        this.output_torque = torque;
 
         /* Gear ratios */
         // const gearRatio = (this.gear > 0 ? this.gears[this.gear-1] : 0) * this.final_drive;
         // const wheelTorque = gearRatio > 0 ? torque * gearRatio : 0;
         // const engineTorque = gearRatio > 0 ? torque / gearRatio : torque;
 
-        // /* Integrate */
-        // const a = torque/this.flywheel_inertia;
-        // const dOmega = a * dt;
-        // this.rpm += (60 * dOmega) / 2 * Math.PI;
-        
-        this.rpm = clamp(this.rpm, 0, this.limiter);
+        /* Integrate */
+        this.alpha = torque/this.inertia;
+        this.omega += this.alpha * dt;
+        this.omega = clamp(this.omega, 0, this.omega_max)
+        this.angle += this.omega * dt;
+
+        this.rpm = (60 * this.omega) / 2 * Math.PI;
+        this.output_torque = torque;
+    }
+
+    postUpdate(omega: number, dt: number) {
+        // this.angle = angle;
+        // this.alpha = 0;
+
+        // const dAngle = this.angle - angle;
+        // this.omega = dt > 0 ? dAngle / dt : 0;
+        this.omega = omega;
     }
 
     applySounds(samples: Record<string, DynamicAudioNode>, rpmPitchFactor = 0.2) {
