@@ -14,7 +14,7 @@ export class Engine {
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
-    limiter_delay = 200; // Time while feeding throttle back in
+    limiter_delay = 150; // Time while feeding throttle back in
     #last_limiter = 0;
 
     /* Torque curves */
@@ -45,14 +45,16 @@ export class Engine {
         /* Limiter */
         if (this.rpm >= this.soft_limiter) {
             const ratio2 = clamp((this.rpm - this.soft_limiter) / (this.limiter - this.soft_limiter), 0, 1);
-            this.throttle *= clamp((1 - ratio2) + 0.5, 0, 1);
+            this.throttle *= clamp((1 - ratio2) + 0.3, 0, 1);
         }
         if (this.rpm >= this.limiter)
             this.#last_limiter = time;
         if (time - this.#last_limiter >= this.limiter_ms) {
             const t = time - this.#last_limiter;
             const r = ratio(t, 0, this.limiter_delay);
-            this.throttle *= Math.pow(r, 4);
+            this.throttle *= Math.pow(r, 2);
+        } else {
+            this.throttle = 0.0;
         }
 
         /* Idle adjustment */
