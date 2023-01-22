@@ -81,60 +81,63 @@ export class Vehicle {
 
     update(time: number, dt: number) {
 
-        /* Forward-feed */
+        // const subSteps = 10;
+        // const h = dt / subSteps;
+        // const t0 = time;
+
+        // for (let i = 0; i < subSteps; i++) {
+
+        //     /* Forward-feed */
+        //     this.engine.update(time, h);
+        //     this.transmission.update(this.engine, h);
+            
+        //     const F = this.mass * this.wheel_radius * this.transmission.alpha;
+        //     const a = F / this.mass;
+        //     this.velocity += a * h;
+
+        //     /* Back-feed -- can be replaced with actual physics simulation */
+        //     let wheel_omega = this.velocity / this.wheel_radius;
+
+        //     // const Fdrag = 1/2 * 1.225 * 2.0 * 0.4 * Math.pow(this.velocity, 2); // Fd = 1/2 × ρ × A × Cd × v²,
+        //     // const aDrag = Fdrag / (this.mass * this.wheel_radius);
+        //     // wheel_omega -= aDrag * h;
+
+        //     this.wheel_rpm = (60 * wheel_omega) / (2 * Math.PI);
+
+        //     this.wheel_omega = wheel_omega;
+
+        //     if (this.transmission.gear > 0) {
+        //         this.transmission.postUpdate(wheel_omega, h);
+        //         // this.engine.postUpdate(this.transmission.getEngineCorrection(), h);
+        //     }
+        // }
+
         this.engine.update(time, dt);
-        this.transmission.update(this.engine, dt);
+
+        const gearRatio = this.transmission.getGearRatio();
         
-        const F = this.mass * this.wheel_radius * this.transmission.alpha;
-        const a = F / this.mass;
+        // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
+        const engine_angular_accel = this.engine.output_angular_accel * this.transmission.clutch;
+
+        const angular_accel = this.transmission.gear > 0 ? (engine_angular_accel * gearRatio) : 0;
+        const F = this.mass * this.wheel_radius * angular_accel;
+        const a = 0.001 * F / this.mass; // ???????
         this.velocity += a * dt;
 
-        /* Back-feed -- can be replaced with actual physics simulation */
-        let wheel_omega = this.velocity / this.wheel_radius;
-
-        // const Fdrag = 1/2 * 1.225 * 2.0 * 0.4 * Math.pow(this.velocity, 2); // Fd = 1/2 × ρ × A × Cd × v²,
-        // const aDrag = Fdrag / (this.mass * this.wheel_radius);
-        // wheel_omega -= aDrag * dt;
-
-        this.wheel_rpm = (60 * wheel_omega) / (2 * Math.PI);
-
-        this.wheel_omega = wheel_omega;
+        const wheel_omega = this.velocity / this.wheel_radius;
+        // this.wheel_rpm = (60 * wheel_omega) / (2 * Math.PI);
 
         if (this.transmission.gear > 0) {
-            this.transmission.postUpdate(wheel_omega);
-            this.engine.postUpdate(this.transmission.getEngineCorrection(), dt);
+            this.engine.omega = wheel_omega * gearRatio;
         }
-
-
-
-        // // const torque = this.engine.output_torque * this.clutch;
-
-        // const gearRatio = (this.gear > 0 ? this.gears[this.gear-1] : 0) * this.final_drive;
-        // // const wheelTorque = gearRatio > 0 ? torque * gearRatio : 0;
-
-        // // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
-        // const engine_angular_accel = this.engine.output_angular_accel * this.clutch;
-
-        // const angular_accel = this.gear > 0 ? (engine_angular_accel / gearRatio) : 0;
-        // const F = this.mass * this.wheel_radius * angular_accel;
-        // const a = F / this.mass;
-        // this.velocity += a * dt;
-
-        // const wheel_RPM = (this.velocity * 1000) / (60 * 2 * Math.PI * this.wheel_radius);
-        // this.wheel_rpm = wheel_RPM;
-
-        // // this.engine.rpm = (wheel_RPM * gearRatio) * this.clutch;
 
         if (this.audio.ctx)
             this.engine.applySounds(this.audio.samples);
     }
 
     changeGear(gear: number) {
-        this.transmission.changeGear(gear);
-
-        // this.engine.rpm = gear >= this.gear 
-        //     ? (this.engine.rpm * 0.6) + this.gear * 150
-        //     : (this.engine.rpm * 1.5)
+        this.transmission.changeGear(gear, this.engine.angle);
+        // this.transmission.angle = this.engine.angle;
     }
 
 }

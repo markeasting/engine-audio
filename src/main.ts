@@ -11,23 +11,31 @@ const vehicle = new Vehicle();
 const gui = new dat.GUI();
 
 const guiVehicle = gui.addFolder('Vehicle');
+const guiTransmission = gui.addFolder('Transmission');
 const guiEngine = gui.addFolder('Engine');
 const guiAudio = gui.addFolder('Audio');
+guiTransmission.open();
 guiVehicle.open();
 guiEngine.open();
 
 /* Vehicle */
+guiVehicle.add(vehicle, 'velocity', 0, 300).name('SPEED').listen();
 guiVehicle.add(vehicle.transmission, 'gear', 0, 6).name('GEAR').listen();
 guiVehicle.add(vehicle.transmission, 'clutch', 0, 1).name('Clutch').step(0.1).listen();
-guiVehicle.add(vehicle.transmission, 'omega', 0, 300).name('Omega').listen();
+guiVehicle.add(vehicle.engine, 'throttle', 0, 1).name('Throttle').listen();
+
+/* Transmission */
+guiTransmission.add(vehicle.transmission, 'alpha', -2000, 2000).name('Alpha').listen();
+guiTransmission.add(vehicle.transmission, 'omega', -100, 100).name('Omega').listen();
 // guiVehicle.add(vehicle, 'wheel_omega', 0, 300).name('Omega (W)').listen();
-guiVehicle.add(vehicle, 'velocity', 0, 300).name('SPEED').listen();
+guiTransmission.add(vehicle.transmission, 'dAngle', -500, 500).name('dAngle').listen();
+guiTransmission.add(vehicle.transmission, 'angle', 0, 1000).name('angle').listen();
 
 /* Engine */
-guiEngine.add(vehicle.engine, 'throttle', 0, 1).name('Throttle').listen();
+guiEngine.add(vehicle.engine, 'angle', 0, 1000).name('angle').listen();
+guiEngine.add(vehicle.engine, 'omega', -500, 500).name('Omega').listen();
+guiEngine.add(vehicle.engine, 'alpha', -50, 50).name('Alpha').listen();
 guiEngine.add(vehicle.engine, 'rpm', 0, vehicle.engine.limiter).name('RPM').listen();
-guiEngine.add(vehicle.engine, 'alpha', -500, 1000).name('Alpha').listen();
-guiEngine.add(vehicle.engine, 'omega', 0, 300).name('Omega').listen();
 
 document.addEventListener('click', async () => {
     

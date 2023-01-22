@@ -19,7 +19,7 @@ export class Engine {
 
     /* Torque curves */
     torque = 330; // Nm
-    engine_braking = 40;
+    engine_braking = 100;
     throttle = 0;
 
     /* Output */
@@ -35,16 +35,13 @@ export class Engine {
 
     constructor(config: Partial<Engine>) {
         Object.assign(this, config);
-
         this.omega_max = (2 * Math.PI * this.limiter) / 60;
-        console.log(this.omega_max);
     }
     
     update(time: number, dt: number) {
 
-        // const r = ratio(this.rpm, this.idle, this.limiter);
-        // const rIdle = ratio(this.rpm, this.idle, 0);
-        
+        // @TODO fix time being the same for each substep
+
         /* Limiter */
         if (this.rpm >= this.soft_limiter) {
             const ratio2 = clamp((this.rpm - this.soft_limiter) / (this.limiter - this.soft_limiter), 0, 1);
@@ -60,20 +57,15 @@ export class Engine {
 
         /* Idle adjustment */
         let idleTorque = 0;
-        // if (this.throttle < 0.1 && this.rpm < this.idle * 1.5) {
-        //     const rIdle = ratio(this.rpm, this.idle * 0.9, this.idle);
-        //     idleTorque = (1-rIdle) * this.engine_braking * 10;
-        // }
+        if (this.throttle < 0.1 && this.rpm < this.idle * 1.5) {
+            const rIdle = ratio(this.rpm, this.idle * 0.9, this.idle);
+            idleTorque = (1-rIdle) * this.engine_braking * 10;
+        }
         
         /* Torque */
         const t1 = Math.pow(this.throttle, 1.2) * this.torque;
         const t2 = Math.pow(1-this.throttle, 1.2) * this.engine_braking;
         const torque = t1 - t2 + idleTorque;
-
-        /* Gear ratios */
-        // const gearRatio = (this.gear > 0 ? this.gears[this.gear-1] : 0) * this.final_drive;
-        // const wheelTorque = gearRatio > 0 ? torque * gearRatio : 0;
-        // const engineTorque = gearRatio > 0 ? torque / gearRatio : torque;
 
         /* Integrate */
         this.alpha = torque/this.inertia;
@@ -83,6 +75,7 @@ export class Engine {
 
         this.rpm = (60 * this.omega) / 2 * Math.PI;
         this.output_torque = torque;
+        this.output_angular_accel = this.alpha;
     }
 
     postUpdate(omega: number, dt: number) {
