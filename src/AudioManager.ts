@@ -1,13 +1,18 @@
+import { clamp } from "./util/clamp";
 
 export class DynamicAudioNode {
-    public gain: GainNode;
-    public audio: AudioBufferSourceNode;
-    public rpm: number;
+    constructor(
+        public gain: GainNode,
+        public audio: AudioBufferSourceNode,
+        public rpm: number = 1000,
+        public volume: number = 1.0,
+    ) {}
 }
 
 export class AudioSource {
     public source: string;
-    public rpm: number;
+    public rpm: number = 1000;
+    public volume?: number = 1.0;
 }
 
 export class AudioManager {
@@ -50,10 +55,23 @@ export class AudioManager {
 
         audio.start();
 
-        return {
+        return new DynamicAudioNode(
             gain,
             audio,
-            rpm: source.rpm
+            source.rpm,
+            source.volume
+        )
+    }
+
+    static crossFade(value: number, start: number, end: number) {
+
+        /* Equal power crossfade */
+        const x = clamp((value - start) / (end - start), 0, 1);
+        const gain1 = Math.cos((1.0 - x) * 0.5 * Math.PI);
+        const gain2 = Math.cos(x * 0.5 * Math.PI);
+
+        return {
+            gain1, gain2
         }
     }
 }

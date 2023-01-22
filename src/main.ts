@@ -10,14 +10,18 @@ const vehicle = new Vehicle();
 
 const gui = new dat.GUI();
 
+const guiVehicle = gui.addFolder('Vehicle');
 const guiEngine = gui.addFolder('Engine');
 const guiAudio = gui.addFolder('Audio');
+guiVehicle.open();
 guiEngine.open();
 
-guiEngine.add(vehicle.engine, 'gear', 0, 6).name('GEAR').listen();
-guiEngine.add(vehicle.engine, 'throttle', 0, 1).name('Throttle');
+guiVehicle.add(vehicle, 'gear', 0, 6).name('GEAR').listen();
+guiVehicle.add(vehicle, 'velocity', 0, 300).name('SPEED').listen();
+
+guiEngine.add(vehicle.engine, 'throttle', 0, 1).name('Throttle').listen();
 guiEngine.add(vehicle.engine, 'rpm', 0, 8000).name('RPM').listen();
-guiEngine.add(vehicle.engine, 'wheel_torque', 0, 8000).name('Output Nm').listen();
+guiEngine.add(vehicle.engine, 'output_torque', 0, 2000).name('Output Nm').listen();
 
 document.addEventListener('click', async () => {
     
@@ -37,20 +41,16 @@ document.addEventListener('click', async () => {
 
 }, {once : true})
 
-document.addEventListener('keypress', e => {
-    if (e.code == 'Space')
-        vehicle.engine.throttle = 1.0;
+const keys: Record<string, boolean> = {}
+document.addEventListener('keydown', e => {
+    keys[e.code] = true;
 })
 document.addEventListener('keyup', e => {
-    if (e.code == 'Space')
-        vehicle.engine.throttle = 0.0;
+    keys[e.code] = false;
 
     if (e.code.startsWith('Digit')) {
         const nextGear = +e.key;
-        vehicle.engine.rpm = nextGear > vehicle.engine.gear 
-            ? (vehicle.engine.rpm * 0.6) + vehicle.engine.gear * 150
-            : (vehicle.engine.rpm * 1.5)
-        vehicle.engine.gear = clamp(nextGear, 0, vehicle.engine.gears.length);
+        vehicle.changeGear(nextGear);
     }
 })
 
@@ -67,6 +67,11 @@ function update(time: DOMHighResTimeStamp): void {
     
     currentTime = (new Date()).getTime();
     delta = (currentTime - lastTime) / 1000;
+
+    if (keys['Space'])
+        vehicle.engine.throttle = 1.0;
+    else 
+        vehicle.engine.throttle = 0.0;
 
     vehicle.update(currentTime, delta);
 
