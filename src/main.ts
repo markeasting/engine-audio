@@ -11,31 +11,28 @@ const vehicle = new Vehicle();
 const gui = new dat.GUI();
 
 const guiVehicle = gui.addFolder('Vehicle');
-const guiTransmission = gui.addFolder('Transmission');
+const guiDrivetrain = gui.addFolder('Drivetrain');
 const guiEngine = gui.addFolder('Engine');
 const guiAudio = gui.addFolder('Audio');
-guiTransmission.open();
+guiDrivetrain.open();
 guiVehicle.open();
 guiEngine.open();
 
 /* Vehicle */
 guiVehicle.add(vehicle, 'velocity', 0, 300).name('SPEED').listen();
-guiVehicle.add(vehicle.transmission, 'gear', 0, 6).name('GEAR').listen();
-guiVehicle.add(vehicle.transmission, 'clutch', 0, 1).name('Clutch').step(0.1).listen();
+guiVehicle.add(vehicle.drivetrain, 'gear', 0, 6).name('GEAR').listen();
+guiVehicle.add(vehicle.drivetrain, 'clutch', 0, 1).name('Clutch').step(0.1).listen();
 guiVehicle.add(vehicle.engine, 'throttle', 0, 1).name('Throttle').listen();
 
-/* Transmission */
-guiTransmission.add(vehicle.transmission, 'alpha', -2000, 2000).name('Alpha').listen();
-guiTransmission.add(vehicle.transmission, 'omega', -100, 100).name('Omega').listen();
-// guiVehicle.add(vehicle, 'wheel_omega', 0, 300).name('Omega (W)').listen();
-guiTransmission.add(vehicle.transmission, 'dAngle', -500, 500).name('dAngle').listen();
-guiTransmission.add(vehicle.transmission, 'angle', 0, 1000).name('angle').listen();
+/* drivetrain */
+guiDrivetrain.add(vehicle.drivetrain, 'theta', 0, 1000).name('Theta').listen();
+guiDrivetrain.add(vehicle.drivetrain, 'omega', -100, 100).name('Omega').listen();
 
 /* Engine */
-guiEngine.add(vehicle.engine, 'angle', 0, 1000).name('angle').listen();
+guiEngine.add(vehicle.engine, 'theta', 0, 1000).name('Theta').listen();
 guiEngine.add(vehicle.engine, 'omega', -500, 500).name('Omega').listen();
-guiEngine.add(vehicle.engine, 'alpha', -50, 50).name('Alpha').listen();
 guiEngine.add(vehicle.engine, 'rpm', 0, vehicle.engine.limiter).name('RPM').listen();
+guiEngine.add(vehicle.engine, 'output_torque', 0, vehicle.engine.torque).name('Torque').listen();
 
 document.addEventListener('click', async () => {
     
@@ -51,7 +48,7 @@ document.addEventListener('click', async () => {
         guiAudio.add(node.audio.detune, 'value', -1200, 1200).name(`${key}: pitch`).listen();
     }
 
-    guiAudio.open();
+    // guiAudio.open();
 
 }, {once : true})
 
@@ -82,15 +79,18 @@ function update(time: DOMHighResTimeStamp): void {
     currentTime = (new Date()).getTime();
     delta = (currentTime - lastTime) / 1000;
 
+    if (delta === 0)
+        return;
+
     if (keys['Space'])
         vehicle.engine.throttle = 1.0;
     else 
         vehicle.engine.throttle = 0.0;
 
     if (keys['ArrowUp'])
-        vehicle.transmission.clutch += 0.1
+        vehicle.drivetrain.clutch += 0.1
     if (keys['ArrowDown'])
-        vehicle.transmission.clutch -= 0.1
+        vehicle.drivetrain.clutch -= 0.1
 
     vehicle.update(currentTime, delta);
 
