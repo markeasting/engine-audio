@@ -10,7 +10,8 @@ export class Engine {
     soft_limiter = this.limiter * 0.95;
     rpm = this.idle;
 
-    inertia = 0.5 * 10 * 0.1^2; /* 0.5 * MR^2 */
+    /* Inertia of engine + clutch and flywheel [kg/m2] */
+    inertia = 0.2 + 0.8; /* 0.5 * MR^2 */
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
@@ -27,9 +28,12 @@ export class Engine {
     output_torque = 0;
 
     /* Integration state */
-    angle: number = 0;
+    theta: number = 0;
     alpha: number = 0;
     omega: number = 0;
+
+    prevTheta: number = 0;
+    dTheta: number = 0;
 
     omega_max: number = 0;
 
@@ -38,9 +42,7 @@ export class Engine {
         this.omega_max = (2 * Math.PI * this.limiter) / 60;
     }
     
-    update(time: number, dt: number) {
-
-        // @TODO fix time being the same for each substep
+    integrate(load_inertia: number = 0, time: number, dt: number) {
 
         /* Limiter */
         if (this.rpm >= this.soft_limiter) {
@@ -70,23 +72,24 @@ export class Engine {
         const torque = t1 - t2 + idleTorque;
 
         /* Integrate */
-        this.alpha = torque/this.inertia;
-        this.omega += this.alpha * dt;
-        this.omega = clamp(this.omega, 0, this.omega_max)
-        this.angle += this.omega * dt;
+        const I = load_inertia + this.inertia;
+        const dAlpha = torque / I;
+        
+        this.prevTheta = this.theta;
+        
+        this.omega += dAlpha * dt;
+        this.theta += this.omega * dt;
+        this.dTheta = this.omega * dt;
 
+        this.omega = clamp(this.omega, 0, this.omega_max);
         this.rpm = (60 * this.omega) / 2 * Math.PI;
-        this.output_torque = torque;
-        this.output_angular_accel = this.alpha;
+
     }
 
-    postUpdate(omega: number, dt: number) {
-        // this.angle = angle;
-        // this.alpha = 0;
+    postUpdate(h: number) {
+        const dTheta = (this.theta - this.prevTheta) / h;
 
-        // const dAngle = this.angle - angle;
-        // this.omega = dt > 0 ? dAngle / dt : 0;
-        this.omega = omega;
+        this.omega = dTheta;
     }
 
     applySounds(samples: Record<string, DynamicAudioNode>, rpmPitchFactor = 0.2) {
