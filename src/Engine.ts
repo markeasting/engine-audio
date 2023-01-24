@@ -1,4 +1,5 @@
 import { AudioManager, DynamicAudioNode } from "./AudioManager";
+import { Drivetrain } from "./Drivetrain";
 import { clamp } from "./util/clamp";
 import { ratio } from "./util/ratio";
 
@@ -7,7 +8,7 @@ export class Engine {
     /* Base settings */
     idle = 1000;
     limiter = 8800;
-    soft_limiter = this.limiter * 0.95;
+    soft_limiter = this.limiter * 0.97;
     rpm = this.idle;
 
     /* Inertia of engine + clutch and flywheel [kg/m2] */
@@ -15,7 +16,7 @@ export class Engine {
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
-    limiter_delay = 150; // Time while feeding throttle back in
+    limiter_delay = 2; // Time while feeding throttle back in
     #last_limiter = 0;
 
     /* Torque curves */
@@ -33,12 +34,13 @@ export class Engine {
     omega: number = 0;
 
     prevTheta: number = 0;
+    prevOmega: number = 0;
     dTheta: number = 0;
 
     omega_max: number = 0;
-
-    constructor(config: Partial<Engine>) {
-        Object.assign(this, config);
+    
+    constructor(config?: Partial<Engine>) {
+        if (config) Object.assign(this, config);
         this.omega_max = (2 * Math.PI * this.limiter) / 60;
     }
     
@@ -46,8 +48,8 @@ export class Engine {
 
         /* Limiter */
         if (this.rpm >= this.soft_limiter) {
-            const ratio2 = clamp((this.rpm - this.soft_limiter) / (this.limiter - this.soft_limiter), 0, 1);
-            this.throttle *= clamp((1 - ratio2) + 0.3, 0, 1);
+            // const ratio2 = ratio(this.rpm, this.soft_limiter, this.limiter);
+            // this.throttle *= clamp((1 - ratio2) + 0.0, 0.9, 1.0);
         }
         if (this.rpm >= this.limiter)
             this.#last_limiter = time;
@@ -76,7 +78,6 @@ export class Engine {
         const dAlpha = torque / I;
         
         this.prevTheta = this.theta;
-        
         this.omega += dAlpha * dt;
         this.theta += this.omega * dt;
         this.dTheta = this.omega * dt;
@@ -86,10 +87,38 @@ export class Engine {
 
     }
 
-    postUpdate(h: number) {
+    update(h: number) {
+        this.prevOmega = this.omega;
+
         const dTheta = (this.theta - this.prevTheta) / h;
 
         this.omega = dTheta;
+    }
+
+    solvePos(drivetrain: Drivetrain, h: number) {
+        if (drivetrain.gear === 0)
+            return;
+        const compliance = 0.001;
+        const c = drivetrain.theta - this.theta;
+        const corr1 = this.getCorrection(c, h, compliance);
+        this.theta += corr1 * Math.sign(c);
+    }
+
+    solveVel(drivetrain: Drivetrain, h: number) {
+        // let dv = 0;
+        // dv -= drivetrain.omega;
+        // dv += this.omega;
+        // dv *= Math.min(1.0, 0.1 * h);
+
+        // this.omega += this.getCorrection(dv, h, 0.0);
+
+        this.omega += (drivetrain.omega - this.omega) * 1 * h;
+    }
+
+    getCorrection(corr: number, h: number, compliance = 0) {
+        const w = corr * corr * 1/this.inertia; // idk?
+        const dlambda = -corr / (w + compliance / h / h);
+        return corr * -dlambda;
     }
 
     applySounds(samples: Record<string, DynamicAudioNode>, rpmPitchFactor = 0.2) {
@@ -97,7 +126,7 @@ export class Engine {
         const { gain1: high, gain2: low } = AudioManager.crossFade(this.rpm, 3000, 4500);
         const { gain1: on, gain2: off } = AudioManager.crossFade(this.throttle, 0, 1);
 
-        /* LOW */
+        // /* LOW */
         samples['on_low'].audio.detune.value = this.getRPMPitch(samples['on_low'].rpm, rpmPitchFactor);
         samples['on_low'].gain.gain.value = on * low * samples['on_low'].volume;
         
@@ -112,7 +141,7 @@ export class Engine {
         samples['off_high'].gain.gain.value = off * high * samples['off_high'].volume;
 
         /* LIMITER */
-        const limiterGain = ratio(this.rpm, this.limiter * 0.99, this.limiter);
+        const limiterGain = ratio(this.rpm, this.limiter * 0.97, this.limiter);
         samples['limiter'].gain.gain.value = limiterGain * samples['limiter'].volume;
     
     }

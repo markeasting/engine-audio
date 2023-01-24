@@ -83,8 +83,10 @@ export class Vehicle {
     // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
     update(time: number, dt: number) {
 
-        const subSteps = 2;
-        const h = (1/60) / subSteps;
+        const subSteps = 10;
+        // const h = (1/60) / subSteps;
+        const h = dt / subSteps;
+        
         const t0 = time;
 
         for (let i = 0; i < subSteps; i++) {
@@ -98,8 +100,8 @@ export class Vehicle {
             /* Solver */
             this.drivetrain.solvePos(this.engine, h);
             
-            this.drivetrain.postUpdate(h);
-            this.engine.postUpdate(h);
+            this.drivetrain.update(h);
+            this.engine.update(h);
         }
 
         if (this.audio.ctx)

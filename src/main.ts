@@ -1,75 +1,80 @@
 import * as dat from 'dat.gui';
-import { AudioManager } from "./AudioManager";
 import { Engine } from './Engine';
-import { clamp } from './util/clamp';
+import { Drivetrain } from './Drivetrain';
+import { AudioManager } from './AudioManager';
 import { Vehicle } from './Vehicle';
 
-// const a = new AudioManager();
-// const engine = new Engine();
 const vehicle = new Vehicle();
+const engine = new Engine({});
+const drivetrain = new Drivetrain();
+const audio = new AudioManager();
 
 const gui = new dat.GUI();
 
-const guiVehicle = gui.addFolder('Vehicle');
 const guiDrivetrain = gui.addFolder('Drivetrain');
 const guiEngine = gui.addFolder('Engine');
-const guiAudio = gui.addFolder('Audio');
 guiDrivetrain.open();
-guiVehicle.open();
 guiEngine.open();
 
-/* Vehicle */
-guiVehicle.add(vehicle, 'velocity', 0, 300).name('SPEED').listen();
-guiVehicle.add(vehicle.drivetrain, 'gear', 0, 6).name('GEAR').listen();
-guiVehicle.add(vehicle.drivetrain, 'clutch', 0, 1).name('Clutch').step(0.1).listen();
-guiVehicle.add(vehicle.engine, 'throttle', 0, 1).name('Throttle').listen();
+guiEngine.add(engine, 'theta', 0, 1000).name('theta').listen();
+guiEngine.add(engine, 'omega', -100, 100).name('omega').listen();
+guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
 
-/* drivetrain */
-guiDrivetrain.add(vehicle.drivetrain, 'theta', 0, 1000).name('Theta').listen();
-guiDrivetrain.add(vehicle.drivetrain, 'omega', -100, 100).name('Omega').listen();
+guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('theta').listen();
+guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('omega').listen();
 
-/* Engine */
-guiEngine.add(vehicle.engine, 'theta', 0, 1000).name('Theta').listen();
-guiEngine.add(vehicle.engine, 'omega', -500, 500).name('Omega').listen();
-guiEngine.add(vehicle.engine, 'rpm', 0, vehicle.engine.limiter).name('RPM').listen();
-guiEngine.add(vehicle.engine, 'output_torque', 0, vehicle.engine.torque).name('Torque').listen();
 
-document.addEventListener('click', async () => {
-    
-    await vehicle.init();
-    console.log(vehicle.audio);
-
-    guiAudio.add(vehicle.audio.volume.gain, 'value', 0, 1).name('Master volume');
-
-    for (const key in vehicle.audio.samples) {
-        const node = vehicle.audio.samples[key]!;
-
-        guiAudio.add(node.gain.gain, 'value', 0, 1).name(`${key}: volume`).step(0.1).listen();
-        guiAudio.add(node.audio.detune, 'value', -1200, 1200).name(`${key}: pitch`).listen();
-    }
-
-    // guiAudio.open();
-
-}, {once : true})
 
 const keys: Record<string, boolean> = {}
 document.addEventListener('keydown', e => {
     keys[e.code] = true;
-})
+});
 document.addEventListener('keyup', e => {
     keys[e.code] = false;
 
     if (e.code.startsWith('Digit')) {
         const nextGear = +e.key;
         vehicle.changeGear(nextGear);
+        drivetrain.changeGear(nextGear);
     }
-})
+});
+document.addEventListener('click', async () => {
+    
+    await audio.init({
+        on_high: {
+            source: 'audio/BAC_Mono_onhigh.wav',
+            rpm: 1000,
+            volume: 0.6
+        },
+        on_low: {
+            source: 'audio/BAC_Mono_onlow.wav',
+            rpm: 1000,
+            volume: 0.6
+        },
+        off_high: {
+            source: 'audio/BAC_Mono_offveryhigh.wav',
+            rpm: 1000,
+            volume: 0.6
+        },
+        off_low: {
+            source: 'audio/BAC_Mono_offlow.wav',
+            rpm: 1000,
+            volume: 0.6
+        },
+        limiter: {
+            source: 'audio/limiter.wav',
+            rpm: 8000,
+            volume: 0.75
+        },
+    });
+
+}, {once : true})
 
 let 
     lastTime = (new Date()).getTime(),
     currentTime = 0,
-    delta = 0;
-
+    dt = 0;
+    
 function update(time: DOMHighResTimeStamp): void {
 
     requestAnimationFrame(time => {
@@ -77,22 +82,43 @@ function update(time: DOMHighResTimeStamp): void {
     });
     
     currentTime = (new Date()).getTime();
-    delta = (currentTime - lastTime) / 1000;
+    dt = (currentTime - lastTime) / 1000;
 
-    if (delta === 0)
+    if (dt === 0)
         return;
 
     if (keys['Space'])
-        vehicle.engine.throttle = 1.0;
+        engine.throttle = 1.0;
     else 
-        vehicle.engine.throttle = 0.0;
+        engine.throttle = 0.0;
 
-    if (keys['ArrowUp'])
-        vehicle.drivetrain.clutch += 0.1
-    if (keys['ArrowDown'])
-        vehicle.drivetrain.clutch -= 0.1
+    if (keys['KeyB'])
+        engine.omega -= 5;
 
-    vehicle.update(currentTime, delta);
+    /* Simulation loop */
+    const subSteps = 20;
+    const h = dt / subSteps;
+
+    const I = vehicle.getLoadInertia();
+
+    for (let i = 0; i < subSteps; i++) {
+        
+        engine.integrate(I, currentTime + dt * i, h);
+        drivetrain.integrate(h);
+
+        engine.solvePos(drivetrain, h);
+        drivetrain.solvePos(engine, h);
+        
+        engine.update(h);
+        drivetrain.update(h);
+
+        engine.solveVel(drivetrain, h);
+        drivetrain.solveVel(engine, h);
+        
+    }
+
+    if (audio.ctx)
+        engine.applySounds(audio.samples);
 
     lastTime = currentTime;
 }
