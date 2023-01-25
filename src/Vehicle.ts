@@ -37,7 +37,7 @@ const procarSounds = {
     },
     off_high: {
         source: 'audio/procar/off_midhigh {092a60f7-c729-4d2c-979e-2e766ba42c6c}.wav',
-        rpm: 8400,
+        rpm: 8430,
         volume: 1.3
     },
     off_low: {
@@ -98,7 +98,7 @@ export class Vehicle {
         const subSteps = 20;
         const h = dt / subSteps;
 
-        const I = this.getLoadInertia() * 0.05;
+        const I = this.getLoadInertia() * 0.00;
 
         for (let i = 0; i < subSteps; i++) {
             

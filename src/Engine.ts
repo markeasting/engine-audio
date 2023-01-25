@@ -16,7 +16,7 @@ export class Engine {
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
-    limiter_delay = 2; // Time while feeding throttle back in
+    limiter_delay = 1; // Time while feeding throttle back in
     #last_limiter = 0;
 
     /* Torque curves */
