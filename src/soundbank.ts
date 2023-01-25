@@ -21,10 +21,8 @@ export const bacSounds = {
         volume: 0.5
     },
     limiter: {
-        source: 'audio/458/limiter.wav',
-        volume: 1.75,
-        // source: 'audio/limiter.wav',
-        // volume: 0.7,
+        source: 'audio/limiter.wav',
+        volume: 0.7,
         rpm: 8000,
     },
 }
@@ -79,8 +77,8 @@ export const sounds458 = {
         volume: 1
     },
     limiter: {
-        source: 'audio/limiter.wav',
-        volume: 0.7,
+        source: 'audio/458/limiter.wav',
+        volume: 1.75,
         rpm: 8000,
     },
 }
