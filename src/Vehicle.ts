@@ -7,22 +7,22 @@ const bacSounds = {
     on_high: {
         source: 'audio/BAC_Mono_onhigh.wav',
         rpm: 1000,
-        volume: 0.6
+        volume: 0.5
     },
     on_low: {
         source: 'audio/BAC_Mono_onlow.wav',
         rpm: 1000,
-        volume: 0.6
+        volume: 0.5
     },
     off_high: {
         source: 'audio/BAC_Mono_offveryhigh.wav',
         rpm: 1000,
-        volume: 0.6
+        volume: 0.5
     },
     off_low: {
         source: 'audio/BAC_Mono_offlow.wav',
         rpm: 1000,
-        volume: 0.6
+        volume: 0.5
     },
 }
 
@@ -44,6 +44,31 @@ const procarSounds = {
         source: 'audio/procar/off_lower {05f28dcf-8251-4e6a-bc40-8099139ef81e}.wav',
         rpm: 3400,
         volume: 1.3
+    },
+}
+
+const sounds458 = {
+    on_high: {
+        source: 'audio/458/power_2 {1d0b3340-525d-418d-b809-a61f94a1d76a}.wav',
+        // source: 'audio/458/on_higher {1903efe0-fff1-4aac-a9c6-3b0d72697783}.wav',
+        // source: 'audio/458/on_high {074b4046-ff4a-4976-bcb2-0011041b3e05}.wav',
+        rpm: 7700,
+        volume: 2.0
+    },
+    on_low: {
+        source: 'audio/458/mid_res_2 {a777a51b-a829-4637-ac37-ccdaca0a3e9b}.wav',
+        rpm: 5300,
+        volume: 1.0
+    },
+    off_high: {
+        source: 'audio/458/off_higher {b1e2e686-3bd7-43df-9cf9-3b8c1afcffc1}.wav',
+        rpm: 7900,
+        volume: 1.3
+    },
+    off_low: {
+        source: 'audio/458/off_midhigh {94a99615-de6b-4b18-a977-a3b5e9b10641}.wav',
+        rpm: 6900,
+        volume: 1
     },
 }
 
@@ -70,22 +95,25 @@ export class Vehicle {
         await this.audio.init({
             ...bacSounds,
             // ...procarSounds,
+            // ...sounds458,
 
             tranny_on: {
                 source: 'audio/trany_power_high.wav',
                 rpm: 0,
-                volume: 0.5
+                volume: 0.4
             },
             tranny_off: {
                 source: 'audio/tw_offlow_4 {0da7d8b9-9064-4108-998b-801699d71790}.wav',
                 // source: 'audio/tw_offhigh_4 {92e2f69f-c149-4fb0-a2b1-c6ee6cbb56a4}.wav',
                 rpm: 0,
-                volume: 0.3
+                volume: 0.2
             },
             limiter: {
+                // source: 'audio/458/limiter.wav',
+                // volume: 1.75
                 source: 'audio/limiter.wav',
-                rpm: 8000,
-                volume: 0.75
+                volume: 0.7,
+                rpm: this.engine.limiter,
             },
         })
     }

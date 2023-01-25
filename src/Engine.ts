@@ -8,7 +8,7 @@ export class Engine {
     /* Base settings */
     idle = 1000;
     limiter = 8800;
-    soft_limiter = this.limiter * 0.97;
+    soft_limiter = this.limiter * 0.99
     rpm = this.idle;
 
     /* Inertia of engine + clutch and flywheel [kg/m2] */
@@ -16,7 +16,7 @@ export class Engine {
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
-    limiter_delay = 1; // Time while feeding throttle back in
+    limiter_delay = 100; // Time while feeding throttle back in
     #last_limiter = 0;
 
     /* Torque curves */
@@ -45,8 +45,8 @@ export class Engine {
 
         /* Limiter */
         if (this.rpm >= this.soft_limiter) {
-            // const ratio2 = ratio(this.rpm, this.soft_limiter, this.limiter);
-            // this.throttle *= clamp((1 - ratio2) + 0.0, 0.9, 1.0);
+            const ratio2 = ratio(this.rpm, this.soft_limiter, this.limiter);
+            this.throttle *= Math.pow(1 - ratio2, 0.05);
         }
         if (this.rpm >= this.limiter)
             this.#last_limiter = time;
@@ -125,8 +125,9 @@ export class Engine {
 
     applySounds(samples: Record<string, DynamicAudioNode>, gearRatio = 0, rpmPitchFactor = 0.2) {
         
-        const { gain1: high, gain2: low } = AudioManager.crossFade(this.rpm, 3000, 4500);
+        const { gain1: high, gain2: low } = AudioManager.crossFade(this.rpm, 3000, 6500);
         const { gain1: on, gain2: off } = AudioManager.crossFade(this.throttle, 0, 1);
+        const limiterGain = ratio(this.rpm, this.soft_limiter * 0.99, this.limiter);
 
         // /* LOW */
         samples['on_low'].audio.detune.value = this.getRPMPitch(samples['on_low'].rpm, rpmPitchFactor);
@@ -143,7 +144,6 @@ export class Engine {
         samples['off_high'].gain.gain.value = off * high * samples['off_high'].volume;
 
         /* LIMITER */
-        const limiterGain = ratio(this.rpm, this.limiter * 0.97, this.limiter);
         samples['limiter'].gain.gain.value = limiterGain * samples['limiter'].volume;
         
         /* TRANSMISSION */
