@@ -71,6 +71,17 @@ export class Vehicle {
             ...bacSounds,
             // ...procarSounds,
 
+            tranny_on: {
+                source: 'audio/trany_power_high.wav',
+                rpm: 0,
+                volume: 0.5
+            },
+            tranny_off: {
+                source: 'audio/tw_offlow_4 {0da7d8b9-9064-4108-998b-801699d71790}.wav',
+                // source: 'audio/tw_offhigh_4 {92e2f69f-c149-4fb0-a2b1-c6ee6cbb56a4}.wav',
+                rpm: 0,
+                volume: 0.3
+            },
             limiter: {
                 source: 'audio/limiter.wav',
                 rpm: 8000,
@@ -83,29 +94,32 @@ export class Vehicle {
     // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
     update(time: number, dt: number) {
 
-        const subSteps = 10;
-        // const h = (1/60) / subSteps;
+        /* Simulation loop */
+        const subSteps = 20;
         const h = dt / subSteps;
-        
-        const t0 = time;
+
+        const I = this.getLoadInertia();
 
         for (let i = 0; i < subSteps; i++) {
-
-            const I = this.getLoadInertia();
             
-            /* Integrate */
-            this.engine.integrate(I, t0 + (h * i), h);
-            this.drivetrain.integrate(dt);
+            this.engine.integrate(I, time + dt * i, h);
+            this.drivetrain.integrate(h);
 
-            /* Solver */
+            this.engine.solvePos(this.drivetrain, h);
             this.drivetrain.solvePos(this.engine, h);
             
-            this.drivetrain.update(h);
             this.engine.update(h);
+            this.drivetrain.update(h);
+
+            this.engine.solveVel(this.drivetrain, h);
+            this.drivetrain.solveVel(this.engine, h);
+            
         }
 
+        this.velocity += this.drivetrain.omega * this.wheel_radius;
+
         if (this.audio.ctx)
-            this.engine.applySounds(this.audio.samples);
+            this.engine.applySounds(this.audio.samples, this.drivetrain.gear);
     }
 
     getLoadInertia() {
@@ -126,10 +140,6 @@ export class Vehicle {
         const I = I1 + I2 + I3;
 
         return I;
-    }
-
-    changeGear(gear: number) {
-        this.drivetrain.changeGear(gear);
     }
 
 }
