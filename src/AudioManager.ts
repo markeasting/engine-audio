@@ -74,4 +74,9 @@ export class AudioManager {
             gain1, gain2
         }
     }
+
+    public dispose() {
+        if (this.ctx)
+            this.ctx.close();
+    }
 }

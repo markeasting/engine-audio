@@ -4,6 +4,11 @@ import { Drivetrain } from './Drivetrain';
 import { AudioManager } from './AudioManager';
 import { Vehicle } from './Vehicle';
 import { clamp } from './util/clamp';
+import * as soundbank from './soundbank';
+
+const sounds = {
+    activeBank: soundbank.bacSounds
+}
 
 /* Vehicle */
 const vehicle = new Vehicle();
@@ -15,8 +20,10 @@ const gui = new dat.GUI();
 
 const guiDrivetrain = gui.addFolder('Drivetrain');
 const guiEngine = gui.addFolder('Engine');
+const guiSounds = gui.addFolder('Sounds');
 guiDrivetrain.open();
 guiEngine.open();
+guiSounds.open();
 
 guiEngine.add(engine, 'theta', 0, 1000).name('theta').listen();
 guiEngine.add(engine, 'omega', -100, 100).name('omega').listen();
@@ -24,6 +31,8 @@ guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
 
 guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('theta').listen();
 guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('omega').listen();
+
+guiSounds.add(sounds, 'activeBank', Object.keys(soundbank));
 
 /* Events */
 const keys: Record<string, boolean> = {}
@@ -47,8 +56,13 @@ document.addEventListener('keyup', e => {
 });
 
 document.addEventListener('click', async () => {
-    await vehicle.init();
+    await vehicle.init(sounds.activeBank);
 }, {once : true})
+
+document.querySelector('select')?.addEventListener('change', async () => {
+    // @ts-ignore
+    await vehicle.init(soundbank[sounds.activeBank]);
+})
 
 /* Main loop */
 let 
