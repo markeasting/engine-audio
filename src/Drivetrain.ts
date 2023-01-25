@@ -98,8 +98,10 @@ export class Drivetrain {
 
         const prevRatio = this.getGearRatio(this.gear);
         const nextRatio = this.getGearRatio(gear);
+        const ratioRatio = prevRatio > 0 ? nextRatio / prevRatio : 0;
 
-        const ratioRatio = prevRatio > 0 ? nextRatio / prevRatio : 1;
+        if (ratioRatio === 1)
+            return;
 
         /* Neutral */
         this.gear = 0; 
