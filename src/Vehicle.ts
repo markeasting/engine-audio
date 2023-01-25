@@ -59,7 +59,7 @@ export class Vehicle {
 
     drivetrain = new Drivetrain();
     
-    mass = 1000;
+    mass = 500;
 
     velocity = 0;
     wheel_rpm = 0;
@@ -98,7 +98,7 @@ export class Vehicle {
         const subSteps = 20;
         const h = dt / subSteps;
 
-        const I = this.getLoadInertia();
+        const I = this.getLoadInertia() * 0.05;
 
         for (let i = 0; i < subSteps; i++) {
             
@@ -116,7 +116,10 @@ export class Vehicle {
             
         }
 
-        this.velocity += this.drivetrain.omega * this.wheel_radius;
+        // if (this.drivetrain.gear > 0) {
+        //     this.velocity += (this.drivetrain.omega / this.drivetrain.getTotalGearRatio()) * this.wheel_radius * dt;
+        //     console.log(this.velocity);
+        // }
 
         if (this.audio.ctx)
             this.engine.applySounds(this.audio.samples, this.drivetrain.gear);

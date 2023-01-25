@@ -20,13 +20,9 @@ export class Engine {
     #last_limiter = 0;
 
     /* Torque curves */
-    torque = 330; // Nm
-    engine_braking = 100;
+    torque = 400; // Nm
+    engine_braking = 200;
     throttle = 0;
-
-    /* Output */
-    output_angular_accel = 0;
-    output_torque = 0;
 
     /* Integration state */
     theta: number = 0;
@@ -37,6 +33,7 @@ export class Engine {
     prevOmega: number = 0;
     dTheta: number = 0;
 
+    /* Precalculated values */
     omega_max: number = 0;
     
     constructor(config?: Partial<Engine>) {
@@ -82,7 +79,7 @@ export class Engine {
         this.theta += this.omega * dt;
         this.dTheta = this.omega * dt;
 
-        this.omega = clamp(this.omega, 0, this.omega_max);
+        // this.omega = clamp(this.omega, 0, this.omega_max);
         this.rpm = (60 * this.omega) / 2 * Math.PI;
 
     }
@@ -98,7 +95,7 @@ export class Engine {
     solvePos(drivetrain: Drivetrain, h: number) {
         if (drivetrain.gear === 0)
             return;
-        const compliance = 0.001;
+        const compliance = Math.max(0.0006 - 0.00015 * drivetrain.gear, 0.00007);
         const c = drivetrain.theta - this.theta;
         const corr1 = this.getCorrection(c, h, compliance);
         this.theta += corr1 * Math.sign(c);
@@ -112,7 +109,12 @@ export class Engine {
 
         // this.omega += this.getCorrection(dv, h, 0.0);
 
-        this.omega += (drivetrain.omega - this.omega) * 1 * h;
+        // const damping = 1 + 1 * Math.pow(drivetrain.gear, 2);
+        let damping = 12;
+        if (drivetrain.gear > 3)
+            damping = 9;
+
+        this.omega += (drivetrain.omega - this.omega) * damping * h;
     }
 
     getCorrection(corr: number, h: number, compliance = 0) {

@@ -6,8 +6,8 @@ export class Drivetrain {
     gear = 0;
     clutch = 1.0;
 
-    gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
-    // gears = [3.0, 2.0, 1.80, 1.389, 1.25, 1.0];
+    // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
+    gears = [3.4, 2.36, 1.85, 1.47, 1.24, 1.07];
     final_drive = 3.44;
 
     theta: number = 0;
@@ -25,7 +25,7 @@ export class Drivetrain {
     /* Inertia of geartrain + drive shaft [kg m2] */
     inertia = 0.1 + 0.05; /* 0.5 * MR^2 */
 
-    shiftTime = 100;
+    shiftTime = 50;
 
     integrate(dt: number) {
 
@@ -58,7 +58,11 @@ export class Drivetrain {
 
         // this.omega += this.getCorrection(dv, h, 0.01);
 
-        this.omega += (engine.omega - this.omega) * 20 * h;
+        let damping = 12;
+        if (this.gear > 3)
+            damping = 9;
+
+        this.omega += (engine.omega - this.omega) * damping * h;
     }
 
     getCorrection(corr: number, h: number, compliance = 0) {
