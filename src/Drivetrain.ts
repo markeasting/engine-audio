@@ -6,8 +6,8 @@ export class Drivetrain {
     gear = 0;
     clutch = 1.0;
 
-    // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
-    gears = [3.0, 2.0, 1.80, 1.389, 1.25, 1.0];
+    gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
+    // gears = [3.0, 2.0, 1.80, 1.389, 1.25, 1.0];
     final_drive = 3.44;
 
     theta: number = 0;
@@ -24,6 +24,8 @@ export class Drivetrain {
 
     /* Inertia of geartrain + drive shaft [kg m2] */
     inertia = 0.1 + 0.05; /* 0.5 * MR^2 */
+
+    shiftTime = 100;
 
     integrate(dt: number) {
 
@@ -72,9 +74,13 @@ export class Drivetrain {
         return this.final_drive;
     }
 
-    getGearRatio() {
-        const ratio = this.gear > 0 
-            ? this.gears[this.gear-1] 
+    getGearRatio(gear?: number) {
+        gear = gear ?? this.gear;
+
+        gear = clamp(gear, 0, this.gears.length);
+
+        const ratio = gear > 0 
+            ? this.gears[gear - 1] 
             : 0;
 
         return ratio;
@@ -86,19 +92,30 @@ export class Drivetrain {
 
     changeGear(gear: number) {
 
-        const prevGear = this.gear;
-        this.gear = gear - 1;
-        this.gear = clamp(gear, 0, this.gears.length);
+        const prevRatio = this.getGearRatio(this.gear);
+        const nextRatio = this.getGearRatio(gear);
 
-        console.log(this.getGearRatio());
+        const ratioRatio = prevRatio > 0 ? nextRatio / prevRatio : 1;
 
-        if (this.gear === 0)
-            return;
+        /* Neutral */
+        this.gear = 0; 
 
-        if (gear > prevGear) {
-            this.omega = this.omega / this.getGearRatio();
-        } else {
-            this.omega = this.omega * this.getGearRatio();
-        }
+        /* Engage next gear */
+        setTimeout(() => {
+            this.omega = this.omega * ratioRatio;
+
+            this.gear = gear;
+            this.gear = clamp(gear, 0, this.gears.length);
+            
+            console.log('Changed', this.gear);
+        }, this.shiftTime)
+    }
+
+    nextGear() {
+        this.changeGear(this.gear + 1);
+    }
+
+    prevGear() {
+        this.changeGear(this.gear - 1);
     }
 }
