@@ -121,7 +121,7 @@ export class Engine {
         return corr * -dlambda;
     }
 
-    applySounds(samples: Record<string, DynamicAudioNode>, rpmPitchFactor = 0.2) {
+    applySounds(samples: Record<string, DynamicAudioNode>, gearRatio = 0, rpmPitchFactor = 0.2) {
         
         const { gain1: high, gain2: low } = AudioManager.crossFade(this.rpm, 3000, 4500);
         const { gain1: on, gain2: off } = AudioManager.crossFade(this.throttle, 0, 1);
@@ -143,6 +143,13 @@ export class Engine {
         /* LIMITER */
         const limiterGain = ratio(this.rpm, this.limiter * 0.97, this.limiter);
         samples['limiter'].gain.gain.value = limiterGain * samples['limiter'].volume;
+        
+        /* TRANSMISSION */
+        samples['tranny_on'].audio.detune.value = this.rpm * gearRatio * 0.05 - 100;
+        samples['tranny_on'].gain.gain.value = gearRatio > 0 ? on * samples['tranny_on'].volume : 0;
+        
+        samples['tranny_off'].audio.detune.value = this.rpm * gearRatio * 0.035 - 800;
+        samples['tranny_off'].gain.gain.value = gearRatio > 0 ? off * samples['tranny_off'].volume : 0;
     
     }
 

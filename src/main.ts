@@ -61,6 +61,17 @@ document.addEventListener('click', async () => {
             rpm: 1000,
             volume: 0.6
         },
+        tranny_on: {
+            source: 'audio/trany_power_high.wav',
+            rpm: 0,
+            volume: 0.5
+        },
+        tranny_off: {
+            source: 'audio/tw_offlow_4 {0da7d8b9-9064-4108-998b-801699d71790}.wav',
+            // source: 'audio/tw_offhigh_4 {92e2f69f-c149-4fb0-a2b1-c6ee6cbb56a4}.wav',
+            rpm: 0,
+            volume: 0.3
+        },
         limiter: {
             source: 'audio/limiter.wav',
             rpm: 8000,
@@ -118,7 +129,7 @@ function update(time: DOMHighResTimeStamp): void {
     }
 
     if (audio.ctx)
-        engine.applySounds(audio.samples);
+        engine.applySounds(audio.samples, drivetrain.gear);
 
     lastTime = currentTime;
 }
