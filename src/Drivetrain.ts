@@ -7,7 +7,7 @@ export class Drivetrain {
     clutch = 1.0;
 
     // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
-    gears = [3.17, 2.36, 1.80, 1.389, 1.25, 1.0];
+    gears = [3.0, 2.0, 1.80, 1.389, 1.25, 1.0];
     final_drive = 3.44;
 
     theta: number = 0;
@@ -95,7 +95,7 @@ export class Drivetrain {
         if (this.gear === 0)
             return;
 
-        if (gear >= prevGear) {
+        if (gear > prevGear) {
             this.omega = this.omega / this.getGearRatio();
         } else {
             this.omega = this.omega * this.getGearRatio();
