@@ -30,7 +30,7 @@ export class Constraint {
     
     // m/N
     public setCompliance(compliance: number) {
-        this.compliance = Math.max(0.00001, compliance);
+        this.compliance = compliance;
         return this;
     }
     
