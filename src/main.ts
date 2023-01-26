@@ -1,6 +1,6 @@
 import * as dat from 'dat.gui';
 import { Engine } from './Engine';
-import { Drivetrain } from './Drivetrain';
+import { Transmission } from './Transmission';
 import { AudioManager } from './AudioManager';
 import { Vehicle } from './Vehicle';
 import { clamp } from './util/clamp';
@@ -13,7 +13,9 @@ const sounds = {
 /* Vehicle */
 const vehicle = new Vehicle();
 const engine = vehicle.engine;
-const drivetrain = vehicle.drivetrain;
+const transmission = vehicle.transmission;
+
+console.log(vehicle);
 
 /* GUI */
 const gui = new dat.GUI();
@@ -29,8 +31,10 @@ guiEngine.add(engine, 'theta', 0, 1000).name('theta').listen();
 guiEngine.add(engine, 'omega', -100, 100).name('omega').listen();
 guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
 
-guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('theta').listen();
-guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('omega').listen();
+// guiDrivetrain.add(vehicle.flywheel, 'theta', 0, 1000).name('theta').listen();
+guiDrivetrain.add(vehicle.wheel, 'theta', 0, 1000).name('theta wheel').listen();
+// guiDrivetrain.add(vehicle.flywheel, 'omega', -100, 100).name('omega').listen();
+guiDrivetrain.add(vehicle.wheel, 'omega', -100, 100).name('omega wheel').listen();
 
 guiSounds.add(sounds, 'activeBank', Object.keys(soundbank));
 
@@ -46,13 +50,13 @@ document.addEventListener('keyup', e => {
 
     if (e.code.startsWith('Digit')) {
         const nextGear = +e.key;
-        drivetrain.changeGear(nextGear);
+        vehicle.changeGear(nextGear);
     }
 
-    if (e.code == 'ArrowUp')
-        drivetrain.nextGear();
-    if (e.code == 'ArrowDown')
-        drivetrain.prevGear();
+    // if (e.code == 'ArrowUp')
+    //     vehicle.nextGear();
+    // if (e.code == 'ArrowDown')
+    //     transmission.prevGear();
 });
 
 document.addEventListener('click', async () => {
@@ -76,7 +80,7 @@ function update(time: DOMHighResTimeStamp): void {
         update(time);
     });
     
-    currentTime = (new Date()).getTime();
+    currentTime = Date.now();
     dt = (currentTime - lastTime) / 1000;
 
     if (dt === 0)
@@ -89,7 +93,7 @@ function update(time: DOMHighResTimeStamp): void {
     }
 
     if (keys['KeyB'])
-        drivetrain.omega -= 0.2;
+        vehicle.engine.omega -= 0.2;
         
     vehicle.update(time, dt);
 

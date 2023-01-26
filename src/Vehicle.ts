@@ -1,7 +1,9 @@
 import { AudioManager, AudioSource } from "./AudioManager";
 import { Engine } from "./Engine";
-import { Drivetrain } from "./Drivetrain";
+import { Transmission as Transmission } from "./Transmission";
 import { clamp } from "./util/clamp";
+import { Body } from "./Body";
+import { Constraint } from "./Constraint";
 
 
 // https://www.motormatchup.com/catalog/BAC/Mono/2020/Base
@@ -9,21 +11,32 @@ export class Vehicle {
 
     audio = new AudioManager();
 
-    engine = new Engine({
-        // idle: 1000,
-        // limiter: 8000,
-    });
+    engine = new Engine();
+    transmission = new Transmission();
+    wheel = new Body();
 
-    drivetrain = new Drivetrain();
-    
-    mass = 500;
+    bodies: Body[] = [];
+    constraints: Constraint[] = [];
+
+    mass = 1000;
 
     velocity = 0;
     wheel_rpm = 0;
     wheel_omega = 0;
-    wheel_radius = 0.250;
+
+    constructor() {
+        this.bodies.push(this.engine);
+        this.bodies.push(this.wheel);
+        this.wheel.radius = 0.250;
+        this.wheel.setMass(4 * (12.0 + 2));
+
+        this.constraints.push(
+            new Constraint(this.engine, this.wheel)
+        );
+    }
 
     async init(soundBank: Record<string, AudioSource>) {
+
         if (this.audio)
             this.audio.dispose();
 
@@ -55,25 +68,43 @@ export class Vehicle {
     update(time: number, dt: number) {
 
         /* Simulation loop */
-        const subSteps = 20;
+        const subSteps = 10;
         const h = dt / subSteps;
 
-        const I = this.getLoadInertia() * 0.00;
+        // const I = this.getLoadInertia();
+        // this.engine.setLoad(I);
+
+        if (this.transmission.gear > 0) {
+            this.constraints[0].setCompliance(0.002 - 0.0011 * Math.pow(this.transmission.gear, 0.2));
+        } else {
+            this.constraints[0].setCompliance(999999);
+        }
+
+        // const t = this.engine.engine_torque * this.engine.throttle;
+        // this.engine.applyTorque(t);
 
         for (let i = 0; i < subSteps; i++) {
-            
-            this.engine.integrate(I, time + dt * i, h);
-            this.drivetrain.integrate(h);
 
-            this.engine.solvePos(this.drivetrain, h);
-            this.drivetrain.solvePos(this.engine, h);
-            
-            this.engine.update(h);
-            this.drivetrain.update(h);
+            this.engine.torque = 0;
+            this.engine.applyTorque(
+                this.engine.letsgo(time, h)
+            );
 
-            this.engine.solveVel(this.drivetrain, h);
-            this.drivetrain.solveVel(this.engine, h);
+            for (const body of this.bodies)
+                body.integrate(h);
+
+            for (const constraint of this.constraints)
+                constraint.solvePos(h);
             
+            for (const body of this.bodies)
+                body.update(h);
+
+            for (const constraint of this.constraints)
+                constraint.solveVel(h);
+
+            // this.solveVelocities(h);
+
+            this.engine.updateRPM();
         }
 
         // if (this.drivetrain.gear > 0) {
@@ -82,27 +113,63 @@ export class Vehicle {
         // }
 
         if (this.audio.ctx)
-            this.engine.applySounds(this.audio.samples, this.drivetrain.gear);
+            this.engine.applySounds(this.audio.samples, this.transmission.gear);
     }
 
-    getLoadInertia() {
-        if (this.drivetrain.gear == 0)
+    private solveVelocities(h: number) {
+        if (this.transmission.gear > 0) {
+            const i = this.transmission.getTotalGearRatio();
+
+            const target = this.engine.omega * 0.5;
+            const corr = this.wheel.omega - target;
+
+            // this.wheel.omega += corr;
+            Constraint.applyBodyPairCorrection(this.engine, this.wheel, corr, 0, h, true)
+        }
+    }
+
+    private getLoadInertia() {
+        if (this.transmission.gear == 0)
             return 0;
             
-        const gearRatio = this.drivetrain.getGearRatio();
-        const totalGearRatio = this.drivetrain.getTotalGearRatio();
+        const gearRatio = this.transmission.getGearRatio();
+        const totalGearRatio = this.transmission.getTotalGearRatio();
 
         /* Moment of inertia - I = mr^2 */
-        const I_veh = this.mass * Math.pow(this.wheel_radius, 2);
-        const I_wheels = 4 * 12.0 * Math.pow(this.wheel_radius, 2);
+        const I_veh = this.mass * Math.pow(this.wheel.radius, 2);
+        const I_wheels = this.wheel.inertia; // 4 * 12.0 * Math.pow(this.wheel_radius, 2);
 
         /* Adjust inertia for gear ratio */
         const I1 = I_veh / Math.pow(totalGearRatio, 2); 
         const I2 = I_wheels / Math.pow(totalGearRatio, 2); 
-        const I3 = this.drivetrain.inertia / Math.pow(gearRatio, 2); 
-        const I = I1 + I2 + I3;
+        const I = I1 + I2;
 
         return I;
+    }
+
+
+    changeGear(gear: number) {
+
+        const prevRatio = this.transmission.getGearRatio(this.transmission.gear);
+        const nextRatio = this.transmission.getGearRatio(gear);
+        const ratioRatio = prevRatio > 0 ? nextRatio / prevRatio : 0;
+
+        if (ratioRatio === 1)
+            return;
+
+        /* Neutral */
+        this.transmission.gear = 0;
+
+        /* Engage next gear */
+        setTimeout(() => {
+            // this.flywheel.omega = this.flywheel.omega * ratioRatio;
+            this.constraints[0].setBaseTheta();
+
+            this.transmission.gear = gear;
+            this.transmission.gear = clamp(gear, 0, this.transmission.gears.length);
+            
+            console.log('Changed', this.transmission.gear);
+        }, this.transmission.shiftTime)
     }
 
 }
