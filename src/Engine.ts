@@ -13,8 +13,8 @@ export class Engine extends Body {
     rpm = this.idle;
 
     /* Inertia of engine + clutch and flywheel [kg/m2] */
-    inertia = 0.2 + 0.8; /* 0.5 * MR^2 */
-    load_inertia = 0;
+    // inertia; /* 0.5 * MR^2 */
+    // load_inertia = 0;
 
     /* Limiter */
     limiter_ms = 0;     // Hard cutoff time
@@ -44,22 +44,12 @@ export class Engine extends Body {
         if (config) Object.assign(this, config);
         this.omega_max = (2 * Math.PI * this.limiter) / 60;
 
-        this.setMass(12);
+        this.setMass(7);
     }
 
-    setLoad(inertia: number) {
-        this.load_inertia = inertia;
-    }
-
-    override integrate(h: number): void {
-        
-        this.prevTheta = this.theta;
-
-        const I = this.inertia + this.load_inertia;
-        this.omega += this.torque * I * h;
-
-        this.theta += this.omega * h;
-    }
+    // setLoad(inertia: number) {
+    //     this.load_inertia = inertia;
+    // }
     
     letsgo(time: number, dt: number) {
 
@@ -106,7 +96,7 @@ export class Engine extends Body {
     }
 
     updateRPM() {
-        this.rpm = (60 * this.omega) / 2 * Math.PI;
+        this.rpm = this.omega * 9.549296585513721; //(60 * this.omega) / 2 * Math.PI; 
     }
     
     // update(h: number) {
