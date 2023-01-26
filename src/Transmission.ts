@@ -11,54 +11,7 @@ export class Transmission {
     // gears = [3.4, 2.36, 1.85, 1.47, 1.24, 1.07];
     final_drive = 3.44;
     
-    shiftTime = 50;
-
-    // integrate(h: number) {
-
-    //     // this.clutch = clamp(this.clutch, 0, 1);
-    //     this.flywheel.integrate(h);
-
-    // }
-
-    // update(h: number) {
-    //     this.flywheel.update(h);
-    // }
-
-    // solvePos(engine: Engine, h: number) {
-    //     // const compliance = 0.01;
-    //     // const c = engine.theta - this.theta;
-    //     // const corr1 = this.getCorrection(c, h, compliance);
-    //     // this.theta += corr1 * Math.sign(c);
-
-    //     this.flywheel.solvePos(engine.theta - this.flywheel.theta, h);
-
-    // }
-
-    // solveVel(engine: Engine, h: number) {
-    //     // let dv = 0;
-    //     // dv -= engine.omega;
-    //     // dv += this.omega;
-    //     // dv *= Math.min(1.0, 1 * h);
-
-    //     // this.omega += this.getCorrection(dv, h, 0.01);
-
-    //     // let damping = 12;
-    //     // if (this.gear > 3)
-    //     //     damping = 9;
-
-    //     // this.omega += (engine.omega - this.omega) * damping * h;
-
-    //     this.flywheel.solveVel(engine.omega - this.flywheel.omega, h);
-    // }
-
-    // getCorrection(corr: number, h: number, compliance = 0) {
-
-    //     const w = corr * corr * 1/this.inertia; // idk?
-
-    //     const dlambda = -corr / (w + compliance / h / h);
-        
-    //     return corr * -dlambda;
-    // }
+    shiftTime = 100;
 
     getFinalDriveRatio() {
         return this.final_drive;
@@ -71,7 +24,7 @@ export class Transmission {
 
         const ratio = gear > 0 
             ? this.gears[gear - 1] 
-            : 0;
+            : 1;
 
         return ratio;
     }
