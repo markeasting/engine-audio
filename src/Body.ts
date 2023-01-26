@@ -34,6 +34,10 @@ export class Body {
     //     this.invMass = 1 / this.mass
     // }
 
+    setTorque(torque: number) {
+        this.torque = torque;
+    }
+
     applyTorque(torque: number) {
         this.torque += torque;
     }
@@ -53,31 +57,6 @@ export class Body {
 
         this.omega = dTheta;
     }
-
-    // solvePos(corr: number, h: number, compliance = 0.01) {
-    //     const c = this.getCorrection(corr, h, compliance);
-    //     this.theta += c * Math.sign(corr);
-    // }
-
-    // solveVel(vrel: number, h: number) {
-    //     // let dv = 0;
-    //     // dv -= engine.omega;
-    //     // dv += this.omega;
-    //     // dv *= Math.min(1.0, 1 * h);
-
-    //     // this.omega += this.getCorrection(dv, h, 0.01);
-
-    //     this.omega += vrel * this.damping * h;
-    // }
-
-    // getCorrection(corr: number, h: number, compliance = 0) {
-
-    //     const w = corr * corr * 1/this.inertia; // idk?
-
-    //     const dlambda = -corr / (w + compliance / h / h);
-        
-    //     return corr * -dlambda;
-    // }
 
     public getInverseMass(): number {
 
