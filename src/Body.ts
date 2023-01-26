@@ -36,10 +36,12 @@ export class Body {
 
     setTorque(torque: number) {
         this.torque = torque;
+        return this;
     }
 
     applyTorque(torque: number) {
         this.torque += torque;
+        return this;
     }
 
     integrate(h: number) {
