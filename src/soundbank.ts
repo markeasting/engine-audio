@@ -59,22 +59,22 @@ export const sounds458 = {
         // source: 'audio/458/on_higher {1903efe0-fff1-4aac-a9c6-3b0d72697783}.wav',
         // source: 'audio/458/on_high {074b4046-ff4a-4976-bcb2-0011041b3e05}.wav',
         rpm: 7700,
-        volume: 2.0
+        volume: 2.5
     },
     on_low: {
         source: 'audio/458/mid_res_2 {a777a51b-a829-4637-ac37-ccdaca0a3e9b}.wav',
         rpm: 5300,
-        volume: 1.0
+        volume: 1.5
     },
     off_high: {
         source: 'audio/458/off_higher {b1e2e686-3bd7-43df-9cf9-3b8c1afcffc1}.wav',
         rpm: 7900,
-        volume: 1.3
+        volume: 1.6
     },
     off_low: {
         source: 'audio/458/off_midhigh {94a99615-de6b-4b18-a977-a3b5e9b10641}.wav',
         rpm: 6900,
-        volume: 1
+        volume: 1.4
     },
     limiter: {
         source: 'audio/458/limiter.wav',
