@@ -4,11 +4,11 @@ import { clamp } from "./util/clamp";
 
 export class Transmission {
 
-    gear = 0;
+    gear = 1;
     // clutch = 1.0;
 
-    // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
-    gears = [3.4, 2.36, 1.85, 1.47, 1.24, 1.07];
+    gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
+    // gears = [3.4, 2.36, 1.85, 1.47, 1.24, 1.07];
     final_drive = 3.44;
     
     shiftTime = 50;

@@ -11,6 +11,7 @@ export class Vehicle {
 
     audio = new AudioManager();
 
+    body = new Body();
     engine = new Engine();
     transmission = new Transmission();
     wheel = new Body();
@@ -25,6 +26,7 @@ export class Vehicle {
     wheel_omega = 0;
 
     constructor() {
+        this.bodies.push(this.body);
         this.bodies.push(this.engine);
         this.bodies.push(this.wheel);
         this.wheel.radius = 0.250;
@@ -43,10 +45,6 @@ export class Vehicle {
         this.audio = new AudioManager();
         
         await this.audio.init({
-            // ...bacSounds,
-            // ...procarSounds,
-            // ...sounds458,
-
             ...soundBank,
 
             tranny_on: {
@@ -80,13 +78,9 @@ export class Vehicle {
             this.constraints[0].setCompliance(999999);
         }
 
-        // const t = this.engine.engine_torque * this.engine.throttle;
-        // this.engine.applyTorque(t);
-
         for (let i = 0; i < subSteps; i++) {
 
-            this.engine.torque = 0;
-            this.engine.applyTorque(
+            this.engine.setTorque(
                 this.engine.letsgo(time, h)
             );
 
@@ -94,7 +88,7 @@ export class Vehicle {
                 body.integrate(h);
 
             for (const constraint of this.constraints)
-                constraint.solvePos(h);
+                constraint.solvePos(h, this.transmission.getTotalGearRatio());
             
             for (const body of this.bodies)
                 body.update(h);
@@ -102,13 +96,13 @@ export class Vehicle {
             for (const constraint of this.constraints)
                 constraint.solveVel(h);
 
-            // this.solveVelocities(h);
+            this.solveVelocities(h);
 
             this.engine.updateRPM();
         }
 
-        // if (this.drivetrain.gear > 0) {
-        //     this.velocity += (this.drivetrain.omega / this.drivetrain.getTotalGearRatio()) * this.wheel_radius * dt;
+        // if (this.transmission.gear > 0) {
+        //     this.velocity = this.wheel.omega * this.wheel.radius * 36;
         //     console.log(this.velocity);
         // }
 
@@ -118,13 +112,15 @@ export class Vehicle {
 
     private solveVelocities(h: number) {
         if (this.transmission.gear > 0) {
+            this.velocity = (this.wheel.omega * this.wheel.radius) * 3.6;
+            
             const i = this.transmission.getTotalGearRatio();
 
             const target = this.engine.omega * 0.5;
             const corr = this.wheel.omega - target;
 
             // this.wheel.omega += corr;
-            Constraint.applyBodyPairCorrection(this.engine, this.wheel, corr, 0, h, true)
+            // Constraint.applyBodyPairCorrection(this.engine, this.wheel, corr, 0, h, true)
         }
     }
 
@@ -168,7 +164,7 @@ export class Vehicle {
             this.transmission.gear = gear;
             this.transmission.gear = clamp(gear, 0, this.transmission.gears.length);
             
-            console.log('Changed', this.transmission.gear);
+            console.log('Changed', this.transmission.gear, this.transmission.getTotalGearRatio());
         }, this.transmission.shiftTime)
     }
 

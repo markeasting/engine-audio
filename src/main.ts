@@ -27,14 +27,13 @@ guiDrivetrain.open();
 guiEngine.open();
 guiSounds.open();
 
-guiEngine.add(engine, 'theta', 0, 1000).name('theta').listen();
-guiEngine.add(engine, 'omega', -100, 100).name('omega').listen();
+guiEngine.add(engine, 'theta', 0, 10000).name('theta').listen();
+guiEngine.add(engine, 'omega', -1000, 1000).name('omega').listen();
 guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
 
-// guiDrivetrain.add(vehicle.flywheel, 'theta', 0, 1000).name('theta').listen();
-guiDrivetrain.add(vehicle.wheel, 'theta', 0, 1000).name('theta wheel').listen();
-// guiDrivetrain.add(vehicle.flywheel, 'omega', -100, 100).name('omega').listen();
-guiDrivetrain.add(vehicle.wheel, 'omega', -100, 100).name('omega wheel').listen();
+guiDrivetrain.add(vehicle, 'velocity', 0, 1000).name('velocity').listen();
+guiDrivetrain.add(vehicle.wheel, 'theta', 0, 10000).name('theta wheel').listen();
+guiDrivetrain.add(vehicle.wheel, 'omega', -1000, 1000).name('omega wheel').listen();
 
 guiSounds.add(sounds, 'activeBank', Object.keys(soundbank));
 
