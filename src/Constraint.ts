@@ -49,8 +49,16 @@ export class Constraint {
         return h > 0 ? this.lambda / (h * h) : 0;
     }
 
-    public solvePos(h: number) {
-        const corr = ((this.body1.theta - this.theta1) - (this.body0.theta - this.theta0));
+    public solvePos(h: number, ratio = 1) {
+
+        const dTheta0 = this.body0.theta - this.theta0;
+        const dTheta1 = this.body1.theta - this.theta1;
+
+        const corr = (
+                (dTheta1 * ratio) // Wheel
+            -   (dTheta0) // Engine
+        );
+        
         this.applyBodyPairCorrection(corr, h, false);
     }
 
