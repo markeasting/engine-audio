@@ -4,6 +4,7 @@ import { Transmission as Transmission } from "./Transmission";
 import { clamp } from "./util/clamp";
 import { Body } from "./Body";
 import { Constraint } from "./Constraint";
+import { BodyLinear } from "./BodyLinear";
 
 
 // https://www.motormatchup.com/catalog/BAC/Mono/2020/Base
@@ -11,12 +12,12 @@ export class Vehicle {
 
     audio = new AudioManager();
 
-    body = new Body();
+    body = new BodyLinear().setMass(1000);
     engine = new Engine();
     transmission = new Transmission();
     wheel = new Body();
 
-    bodies: Body[] = [];
+    bodies: Array<Body|BodyLinear> = [];
     constraints: Constraint[] = [];
 
     mass = 1000;
@@ -65,30 +66,39 @@ export class Vehicle {
     // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
     update(time: number, dt: number) {
 
+        const I = this.getLoadInertia() * 2;
+
+        if (this.transmission.gear > 0) {
+            // this.constraints[0].setCompliance(0.01);
+            this.constraints[0]
+                .setCompliance(0.004 - 0.002 * Math.pow(this.transmission.gear, 0.25))
+                .setDamping(80);
+        } else {
+            this.constraints[0].setCompliance(999999);
+        }
+        
         /* Simulation loop */
         const subSteps = 10;
         const h = dt / subSteps;
 
-        // const I = this.getLoadInertia();
-        // this.engine.setLoad(I);
-
-        if (this.transmission.gear > 0) {
-            this.constraints[0].setCompliance(0.002 - 0.0011 * Math.pow(this.transmission.gear, 0.2));
-        } else {
-            this.constraints[0].setCompliance(999999);
-        }
-
         for (let i = 0; i < subSteps; i++) {
 
-            this.engine.setTorque(
-                this.engine.letsgo(time, h)
-            );
+            const torque = this.engine.letsgo(time, h);
+            this.engine.setTorque(torque);
+            this.engine.setLoad(I);
+
+            // Don't use force -- should be position based
+            // this.body.setForce(
+            //     // 1.0 * Math.pow(this.velocity, 2)
+            //     (torque * this.transmission.getTotalGearRatio()) / this.wheel.radius
+            // );
 
             for (const body of this.bodies)
                 body.integrate(h);
 
             for (const constraint of this.constraints)
-                constraint.solvePos(h, this.transmission.getTotalGearRatio());
+                constraint.solvePos(h, 1);
+                // constraint.solvePos(h, this.transmission.getTotalGearRatio());
             
             for (const body of this.bodies)
                 body.update(h);
@@ -101,26 +111,24 @@ export class Vehicle {
             this.engine.updateRPM();
         }
 
-        // if (this.transmission.gear > 0) {
-        //     this.velocity = this.wheel.omega * this.wheel.radius * 36;
-        //     console.log(this.velocity);
-        // }
-
         if (this.audio.ctx)
             this.engine.applySounds(this.audio.samples, this.transmission.gear);
     }
 
     private solveVelocities(h: number) {
         if (this.transmission.gear > 0) {
-            this.velocity = (this.wheel.omega * this.wheel.radius) * 3.6;
-            
-            const i = this.transmission.getTotalGearRatio();
+            const v_wheel = this.wheel.omega * this.wheel.radius;
+            this.body.velocity = v_wheel;
+            // this.body.velocity *= 0.999;
 
-            const target = this.engine.omega * 0.5;
-            const corr = this.wheel.omega - target;
+            // const v_wheel_new = this.body.velocity / this.wheel.radius;
+            // this.wheel.omega = v_wheel_new;
 
-            // this.wheel.omega += corr;
-            // Constraint.applyBodyPairCorrection(this.engine, this.wheel, corr, 0, h, true)
+            /* km/h */
+            this.velocity = this.body.velocity * 3.6;
+
+            // const corr = v_wheel - v;
+            // this.body.applyCorrection(corr, true);
         }
     }
 
@@ -155,17 +163,29 @@ export class Vehicle {
 
         /* Neutral */
         this.transmission.gear = 0;
+        this.constraints[0].setBaseTheta();
 
         /* Engage next gear */
         setTimeout(() => {
-            // this.flywheel.omega = this.flywheel.omega * ratioRatio;
-            this.constraints[0].setBaseTheta();
-
+            // this.constraints[0].setBaseTheta();
+            this.engine.omega = this.engine.omega * ratioRatio;
+            
             this.transmission.gear = gear;
             this.transmission.gear = clamp(gear, 0, this.transmission.gears.length);
             
+            // this.constraints[0]
+            //     .setDamping(100 - gear * 10);
+
             console.log('Changed', this.transmission.gear, this.transmission.getTotalGearRatio());
         }, this.transmission.shiftTime)
+    }
+
+    nextGear() {
+        this.changeGear(this.transmission.gear + 1);
+    }
+
+    prevGear() {
+        this.changeGear(this.transmission.gear - 1);
     }
 
 }
