@@ -31,7 +31,7 @@ guiEngine.add(engine, 'theta', 0, 10000).name('theta').listen();
 guiEngine.add(engine, 'omega', -1000, 1000).name('omega').listen();
 guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
 
-guiDrivetrain.add(vehicle, 'velocity', 0, 1000).name('velocity').listen();
+guiDrivetrain.add(vehicle, 'velocity', 0, 250).name('velocity').listen();
 guiDrivetrain.add(vehicle.wheel, 'theta', 0, 10000).name('theta wheel').listen();
 guiDrivetrain.add(vehicle.wheel, 'omega', -1000, 1000).name('omega wheel').listen();
 
@@ -52,10 +52,10 @@ document.addEventListener('keyup', e => {
         vehicle.changeGear(nextGear);
     }
 
-    // if (e.code == 'ArrowUp')
-    //     vehicle.nextGear();
-    // if (e.code == 'ArrowDown')
-    //     transmission.prevGear();
+    if (e.code == 'ArrowUp')
+        vehicle.nextGear();
+    if (e.code == 'ArrowDown')
+        vehicle.prevGear();
 });
 
 document.addEventListener('click', async () => {
@@ -92,7 +92,7 @@ function update(time: DOMHighResTimeStamp): void {
     }
 
     if (keys['KeyB'])
-        vehicle.engine.omega -= 0.2;
+        vehicle.wheel.omega -= 4;
         
     vehicle.update(time, dt);
 
