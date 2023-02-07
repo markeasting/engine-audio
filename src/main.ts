@@ -6,6 +6,8 @@ import { Vehicle } from './Vehicle';
 import { clamp } from './util/clamp';
 import * as soundbank from './soundbank';
 
+let loaded = false;
+
 const sounds = {
     activeBank: soundbank.bacSounds
 }
@@ -60,6 +62,8 @@ document.addEventListener('keyup', e => {
 
 document.addEventListener('click', async () => {
     await vehicle.init(sounds.activeBank);
+
+    loaded = true;
 }, {once : true})
 
 document.querySelector('select')?.addEventListener('change', async () => {
@@ -97,8 +101,9 @@ function update(time: DOMHighResTimeStamp): void {
 
     if (keys['KeyB'])
         drivetrain.omega -= 0.3;
-        
-    vehicle.update(time, dt);
+    
+    if (loaded)
+        vehicle.update(time, dt);
 
     lastTime = currentTime;
 }
