@@ -5,6 +5,7 @@ export class Drivetrain {
 
     gear = 0;
     clutch = 1.0;
+    downShift = false;
 
     // gears = [3.17, 2.36, 1.80, 1.47, 1.24, 1.11];
     gears = [3.4, 2.36, 1.85, 1.47, 1.24, 1.07];
@@ -106,14 +107,19 @@ export class Drivetrain {
         /* Neutral */
         this.gear = 0; 
 
+        if (ratioRatio > 1)
+            this.downShift = true;
+
         /* Engage next gear */
         setTimeout(() => {
             this.omega = this.omega * ratioRatio;
 
             this.gear = gear;
             this.gear = clamp(gear, 0, this.gears.length);
-            
+            this.downShift = false;
+
             console.log('Changed', this.gear);
+
         }, this.shiftTime)
     }
 

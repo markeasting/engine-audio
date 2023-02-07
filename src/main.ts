@@ -18,21 +18,24 @@ const drivetrain = vehicle.drivetrain;
 /* GUI */
 const gui = new dat.GUI();
 
-const guiDrivetrain = gui.addFolder('Drivetrain');
-const guiEngine = gui.addFolder('Engine');
 const guiSounds = gui.addFolder('Sounds');
-guiDrivetrain.open();
-guiEngine.open();
+const guiEngine = gui.addFolder('Engine');
+const guiDrivetrain = gui.addFolder('Drivetrain');
 guiSounds.open();
+guiEngine.open();
+guiDrivetrain.open();
 
-guiEngine.add(engine, 'theta', 0, 1000).name('theta').listen();
-guiEngine.add(engine, 'omega', -100, 100).name('omega').listen();
-guiEngine.add(engine, 'rpm', 0, engine.limiter).name('rpm').listen();
+guiSounds.add(sounds, 'activeBank', Object.keys(soundbank)).name('Select sound');
 
-guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('theta').listen();
-guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('omega').listen();
+guiEngine.add(engine, 'throttle', 0, 1).name('Throttle').listen();
+guiEngine.add(engine, 'rpm', 0, engine.limiter).name('RPM').listen();
+guiEngine.add(engine, 'theta', 0, 1000).name('Theta').listen();
+guiEngine.add(engine, 'omega', -100, 100).name('Omega').listen();
 
-guiSounds.add(sounds, 'activeBank', Object.keys(soundbank));
+guiDrivetrain.add(drivetrain, 'gear').name('Gear').listen();
+guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('Theta').listen();
+guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('Omega').listen();
+
 
 /* Events */
 const keys: Record<string, boolean> = {}
@@ -64,7 +67,7 @@ document.querySelector('select')?.addEventListener('change', async () => {
     await vehicle.init(soundbank[sounds.activeBank]);
 })
 
-/* Main loop */
+/* Update loop */
 let 
     lastTime = (new Date()).getTime(),
     currentTime = 0,
@@ -82,14 +85,18 @@ function update(time: DOMHighResTimeStamp): void {
     if (dt === 0)
         return;
 
-    if (keys['Space']) {
-        engine.throttle = clamp(engine.throttle += 0.2, 0, 1);
+    if (!drivetrain.downShift) {
+        if (keys['Space']) {
+            engine.throttle = clamp(engine.throttle += 0.2, 0, 1);
+        } else {
+            engine.throttle = clamp(engine.throttle -= 0.2, 0, 1);
+        }
     } else {
-        engine.throttle = clamp(engine.throttle -= 0.2, 0, 1);
+        engine.throttle = 0.8; // Rev matching
     }
 
     if (keys['KeyB'])
-        drivetrain.omega -= 0.2;
+        drivetrain.omega -= 0.3;
         
     vehicle.update(time, dt);
 
