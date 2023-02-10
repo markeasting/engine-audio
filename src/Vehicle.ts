@@ -26,6 +26,8 @@ export class Vehicle {
     wheel_rpm = 0;
     wheel_omega = 0;
 
+    downShift = false;
+
     constructor() {
         this.bodies.push(this.body);
         this.bodies.push(this.engine);
@@ -72,7 +74,7 @@ export class Vehicle {
             // this.constraints[0].setCompliance(0.01);
             this.constraints[0]
                 .setCompliance(0.004 - 0.002 * Math.pow(this.transmission.gear, 0.25))
-                .setDamping(80);
+                .setDamping(100);
         } else {
             this.constraints[0].setCompliance(999999);
         }
@@ -165,6 +167,9 @@ export class Vehicle {
         this.transmission.gear = 0;
         this.constraints[0].setBaseTheta();
 
+        if (ratioRatio > 1)
+            this.downShift = true;
+
         /* Engage next gear */
         setTimeout(() => {
             // this.constraints[0].setBaseTheta();
@@ -175,6 +180,8 @@ export class Vehicle {
             
             // this.constraints[0]
             //     .setDamping(100 - gear * 10);
+
+            this.downShift = false;
 
             console.log('Changed', this.transmission.gear, this.transmission.getTotalGearRatio());
         }, this.transmission.shiftTime)

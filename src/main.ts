@@ -85,10 +85,14 @@ function update(time: DOMHighResTimeStamp): void {
     if (dt === 0)
         return;
 
-    if (keys['Space']) {
-        engine.throttle = clamp(engine.throttle += 0.2, 0, 1);
+    if (!vehicle.downShift) {
+        if (keys['Space']) {
+            engine.throttle = clamp(engine.throttle += 0.2, 0, 1);
+        } else {
+            engine.throttle = clamp(engine.throttle -= 0.2, 0, 1);
+        }
     } else {
-        engine.throttle = clamp(engine.throttle -= 0.2, 0, 1);
+        engine.throttle = 0.8; // Rev matching
     }
 
     if (keys['KeyB'])
