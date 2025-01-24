@@ -1,19 +1,13 @@
-import { AudioManager, AudioSource } from "./AudioManager";
+import { AudioManager } from "./AudioManager";
 import { Engine } from "./Engine";
 import { Drivetrain } from "./Drivetrain";
-import { clamp } from "./util/clamp";
+import { EngineConfiguration } from "./configurations";
 
-
-// https://www.motormatchup.com/catalog/BAC/Mono/2020/Base
 export class Vehicle {
 
     audio = new AudioManager();
 
-    engine = new Engine({
-        // idle: 1000,
-        // limiter: 8000,
-    });
-
+    engine = new Engine();;
     drivetrain = new Drivetrain();
     
     mass = 500;
@@ -23,33 +17,19 @@ export class Vehicle {
     wheel_omega = 0;
     wheel_radius = 0.250;
 
-    async init(soundBank: Record<string, AudioSource>) {
+    async init(configuration: EngineConfiguration) {
         if (this.audio)
             this.audio.dispose();
 
+        this.engine.init(configuration.engine);
+        this.drivetrain.init(configuration.drivetrain);
+
         this.audio = new AudioManager();
         
-        await this.audio.init({
-            // ...bacSounds,
-            // ...procarSounds,
-            // ...sounds458,
-
-            ...soundBank,
-
-            tranny_on: {
-                source: 'audio/trany_power_high.wav',
-                rpm: 0,
-                volume: 0.4
-            },
-            tranny_off: {
-                source: 'audio/tw_offlow_4 {0da7d8b9-9064-4108-998b-801699d71790}.wav',
-                // source: 'audio/tw_offhigh_4 {92e2f69f-c149-4fb0-a2b1-c6ee6cbb56a4}.wav',
-                rpm: 0,
-                volume: 0.2
-            },
-        })
+        await this.audio.init(configuration.sounds);
     }
 
+    // https://github.com/markeasting/THREE-XPBD
     // http://www.thecartech.com/subjects/auto_eng/car_performance_formulas.htm
     // https://pressbooks-dev.oer.hawaii.edu/collegephysics/chapter/10-3-dynamics-of-rotational-motion-rotational-inertia/
     update(time: number, dt: number) {

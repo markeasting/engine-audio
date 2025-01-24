@@ -1,14 +1,13 @@
 import { AudioManager, DynamicAudioNode } from "./AudioManager";
 import { Drivetrain } from "./Drivetrain";
-import { clamp } from "./util/clamp";
 import { ratio } from "./util/ratio";
 
 export class Engine {
 
     /* Base settings */
     idle = 1000;
-    limiter = 8800;
-    soft_limiter = this.limiter * 0.99
+    limiter = 0;
+    soft_limiter = 0;
     rpm = this.idle;
 
     /* Inertia of engine + clutch and flywheel [kg/m2] */
@@ -35,10 +34,26 @@ export class Engine {
 
     /* Precalculated values */
     omega_max: number = 0;
+
+    constructor() {
+        this.init();
+    }
     
-    constructor(config?: Partial<Engine>) {
+    init(config?: Partial<Engine>) {
+        console.log(this.limiter);
         if (config) Object.assign(this, config);
         this.omega_max = (2 * Math.PI * this.limiter) / 60;
+
+        this.soft_limiter = config?.soft_limiter ?? this.limiter * 0.99;
+
+        this.theta = 0;
+        this.alpha = 0;
+        this.omega = 0;
+    
+        this.prevTheta = 0;
+        this.prevOmega = 0;
+        this.dTheta = 0;
+        this.rpm = 0;
     }
     
     integrate(load_inertia: number = 0, time: number, dt: number) {
@@ -53,7 +68,7 @@ export class Engine {
         if (time - this.#last_limiter >= this.limiter_ms) {
             const t = time - this.#last_limiter;
             const r = ratio(t, 0, this.limiter_delay);
-            this.throttle *= Math.pow(r, 2);
+            this.throttle *= r;
         } else {
             this.throttle = 0.0;
         }
@@ -127,37 +142,37 @@ export class Engine {
         
         const { gain1: high, gain2: low } = AudioManager.crossFade(this.rpm, 3000, 6500);
         const { gain1: on, gain2: off } = AudioManager.crossFade(this.throttle, 0, 1);
-        const limiterGain = ratio(this.rpm, this.soft_limiter * 0.99, this.limiter);
+        const limiterGain = ratio(this.rpm, this.soft_limiter * 0.93, this.limiter);
 
-        // /* LOW */
-        samples['on_low'].audio.detune.value = this.getRPMPitch(samples['on_low'].rpm, rpmPitchFactor);
-        samples['on_low'].gain.gain.value = on * low * samples['on_low'].volume;
-        
-        samples['off_low'].audio.detune.value = this.getRPMPitch(samples['off_low'].rpm, rpmPitchFactor);
-        samples['off_low'].gain.gain.value = off * low * samples['off_low'].volume;
+        const applySample = (key: string, gain: number, applyPitch: boolean = true) => {
+            if (!samples[key]) {
+                return;
+            }
 
-        /* HIGH */
-        samples['on_high'].audio.detune.value = this.getRPMPitch(samples['on_high'].rpm, rpmPitchFactor);
-        samples['on_high'].gain.gain.value = on * high * samples['on_high'].volume;
-        
-        samples['off_high'].audio.detune.value = this.getRPMPitch(samples['off_high'].rpm, rpmPitchFactor);
-        samples['off_high'].gain.gain.value = off * high * samples['off_high'].volume;
+            if (applyPitch) {
+                samples[key].audio.detune.value = this.getRPMPitch(samples[key].rpm, rpmPitchFactor);
+            }
 
-        /* LIMITER */
-        samples['limiter'].gain.gain.value = limiterGain * samples['limiter'].volume;
-        
+            samples[key].gain.gain.value = gain * samples[key].volume;
+        };
+
+        applySample('on_low', on * low);
+        applySample('off_low', off * low);
+        applySample('on_high', on * high);
+        applySample('off_high', off * high);
+        applySample('limiter', limiterGain, false);
+
         /* TRANSMISSION */
-        samples['tranny_on'].audio.detune.value = this.rpm * gearRatio * 0.05 - 100;
-        samples['tranny_on'].gain.gain.value = gearRatio > 0 ? on * samples['tranny_on'].volume : 0;
-        
-        samples['tranny_off'].audio.detune.value = this.rpm * gearRatio * 0.035 - 800;
-        samples['tranny_off'].gain.gain.value = gearRatio > 0 ? off * samples['tranny_off'].volume : 0;
-    
+        if (samples['tranny_on'] && samples['tranny_off']) {
+            samples['tranny_on'].audio.detune.value = this.rpm * gearRatio * 0.05 - 100;
+            samples['tranny_on'].gain.gain.value = gearRatio > 0 ? on * samples['tranny_on'].volume : 0;
+            
+            samples['tranny_off'].audio.detune.value = this.rpm * gearRatio * 0.035 - 800;
+            samples['tranny_off'].gain.gain.value = gearRatio > 0 ? off * samples['tranny_off'].volume : 0;
+        }
     }
 
     getRPMPitch(sampleRPM: number, rpmPitchFactor: number) {
         return (this.rpm - sampleRPM) * rpmPitchFactor
     }
-
-    
 }

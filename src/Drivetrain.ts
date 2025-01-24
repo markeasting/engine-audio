@@ -18,15 +18,30 @@ export class Drivetrain {
 
     theta_wheel: number = 0;
     omega_wheel: number = 0;
-    // prevTheta_wheel: number = 0;
-    // prevOmega_wheel: number = 0;
     
-    flex = 20;
-
     /* Inertia of geartrain + drive shaft [kg m2] */
     inertia = 0.1 + 0.05; /* 0.5 * MR^2 */
+    damping = 12;
+    compliance = 0.01;
 
     shiftTime = 50;
+
+    constructor() {
+        this.init();
+    }
+
+    init(config?: Partial<Drivetrain>) {
+        if (config) Object.assign(this, config);
+
+        this.theta = 0;
+        this.omega = 0;
+        this.prevTheta = 0;
+        this.prevOmega = 0;
+        this.theta_wheel = 0;
+        this.omega_wheel = 0;
+
+        this.gear = 0;
+    }
 
     integrate(dt: number) {
 
@@ -45,9 +60,9 @@ export class Drivetrain {
     }
 
     solvePos(engine: Engine, h: number) {
-        const compliance = 0.01;
+        // const compliance = 0.01;
         const c = engine.theta - this.theta;
-        const corr1 = this.getCorrection(c, h, compliance);
+        const corr1 = this.getCorrection(c, h, this.compliance);
         this.theta += corr1 * Math.sign(c);
     }
 
@@ -59,9 +74,10 @@ export class Drivetrain {
 
         // this.omega += this.getCorrection(dv, h, 0.01);
 
-        let damping = 12;
+        let damping = this.damping;
+
         if (this.gear > 3)
-            damping = 9;
+            damping = this.damping * 0.75;
 
         this.omega += (engine.omega - this.omega) * damping * h;
     }

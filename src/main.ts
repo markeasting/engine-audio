@@ -1,15 +1,12 @@
 import * as dat from 'dat.gui';
-import { Engine } from './Engine';
-import { Drivetrain } from './Drivetrain';
-import { AudioManager } from './AudioManager';
+import * as configurations from './configurations';
 import { Vehicle } from './Vehicle';
 import { clamp } from './util/clamp';
-import * as soundbank from './soundbank';
 
 let loaded = false;
 
-const sounds = {
-    activeBank: soundbank.bacSounds
+const settings = {
+    activeConfig: 'bac_mono'
 }
 
 /* Vehicle */
@@ -20,14 +17,15 @@ const drivetrain = vehicle.drivetrain;
 /* GUI */
 const gui = new dat.GUI();
 
-const guiSounds = gui.addFolder('Sounds');
+const guiMain = gui.addFolder('Settings');
 const guiEngine = gui.addFolder('Engine');
 const guiDrivetrain = gui.addFolder('Drivetrain');
-guiSounds.open();
+
+guiMain.open();
 guiEngine.open();
 guiDrivetrain.open();
 
-guiSounds.add(sounds, 'activeBank', Object.keys(soundbank)).name('Select sound');
+guiMain.add(settings, 'activeConfig', Object.keys(configurations)).name('Select config');
 
 guiEngine.add(engine, 'throttle', 0, 1).name('Throttle').listen();
 guiEngine.add(engine, 'rpm', 0, engine.limiter).name('RPM').listen();
@@ -38,7 +36,6 @@ guiDrivetrain.add(drivetrain, 'gear').name('Gear').listen();
 guiDrivetrain.add(drivetrain, 'theta', 0, 1000).name('Theta').listen();
 guiDrivetrain.add(drivetrain, 'omega', -100, 100).name('Omega').listen();
 
-
 /* Events */
 const keys: Record<string, boolean> = {}
 
@@ -47,6 +44,10 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('keyup', e => {
+    if (!loaded) {
+        return;
+    }
+    
     keys[e.code] = false;
 
     if (e.code.startsWith('Digit')) {
@@ -60,16 +61,22 @@ document.addEventListener('keyup', e => {
         drivetrain.prevGear();
 });
 
-document.addEventListener('click', async () => {
-    await vehicle.init(sounds.activeBank);
+/* Initialization */
+const startBtn = document.getElementById('start_btn');
+const controls = document.getElementById('controls');
+
+startBtn?.addEventListener('click', start, {once : true})
+document.querySelector('select')?.addEventListener('change', start)
+
+async function start() {
+    // @ts-ignore
+    await vehicle.init(configurations[settings.activeConfig]);
 
     loaded = true;
-}, {once : true})
-
-document.querySelector('select')?.addEventListener('change', async () => {
-    // @ts-ignore
-    await vehicle.init(soundbank[sounds.activeBank]);
-})
+    
+    startBtn!.style.display = 'none';
+    controls!.style.display = 'block';
+}
 
 /* Update loop */
 let 
@@ -85,27 +92,31 @@ function update(time: DOMHighResTimeStamp): void {
     
     currentTime = (new Date()).getTime();
     dt = (currentTime - lastTime) / 1000;
+    lastTime = currentTime;
 
-    if (dt === 0)
+    if (dt === 0) {
         return;
+    }
 
-    if (!drivetrain.downShift) {
+    if (!loaded) {
+        return;
+    }
+
+    if (drivetrain.downShift) {
+        engine.throttle = 0.8; // Rev matching
+    } else {
         if (keys['Space']) {
             engine.throttle = clamp(engine.throttle += 0.2, 0, 1);
         } else {
             engine.throttle = clamp(engine.throttle -= 0.2, 0, 1);
         }
-    } else {
-        engine.throttle = 0.8; // Rev matching
     }
 
-    if (keys['KeyB'])
-        drivetrain.omega -= 0.3;
+    if (keys['KeyB']) {
+        drivetrain.omega -= 0.3; // Brakes
+    }
     
-    if (loaded)
-        vehicle.update(time, dt);
-
-    lastTime = currentTime;
+    vehicle.update(time, dt);
 }
 
 update(10);
