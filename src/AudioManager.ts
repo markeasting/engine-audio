@@ -22,7 +22,7 @@ export class AudioManager {
 
     samples: Record<string, DynamicAudioNode> = {}
 
-    async init(sources: Record<string, AudioSource>) {
+    async init(sources: Record<string, AudioSource>, onProgress?: (done: number, total: number) => void) {
         if (this.ctx)
             return;
 
@@ -30,8 +30,12 @@ export class AudioManager {
         this.volume = new GainNode(this.ctx);
         // this.volume.gain.value = 0.2;
 
-        for (const key in sources) {
+        const keys = Object.keys(sources);
+        let done = 0;
+
+        for (const key of keys) {
             this.samples[key] = await this.add(sources[key]);
+            onProgress?.(++done, keys.length);
         }
         
         if (this.ctx.state === 'suspended')

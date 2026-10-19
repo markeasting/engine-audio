@@ -17,7 +17,7 @@ export class Vehicle {
     wheel_omega = 0;
     wheel_radius = 0.250;
 
-    async init(configuration: EngineConfiguration) {
+    async init(configuration: EngineConfiguration, onProgress?: (done: number, total: number) => void) {
         if (this.audio)
             this.audio.dispose();
 
@@ -25,8 +25,20 @@ export class Vehicle {
         this.drivetrain.init(configuration.drivetrain);
 
         this.audio = new AudioManager();
-        
-        await this.audio.init(configuration.sounds);
+
+        await this.audio.init(configuration.sounds, onProgress);
+    }
+
+    /** Vehicle speed derived from engine rpm and gear ratio [km/h] */
+    getVelocityKmh() {
+        const totalRatio = this.drivetrain.getTotalGearRatio();
+
+        if (this.drivetrain.gear === 0 || totalRatio === 0)
+            return 0;
+
+        const wheelRpm = this.engine.rpm / totalRatio;
+
+        return wheelRpm * (2 * Math.PI * this.wheel_radius) / 60 * 3.6;
     }
 
     // https://github.com/markeasting/THREE-XPBD

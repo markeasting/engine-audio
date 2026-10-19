@@ -41,6 +41,7 @@ export class Drivetrain {
         this.omega_wheel = 0;
 
         this.gear = 0;
+        this.downShift = false;
     }
 
     integrate(dt: number) {
@@ -121,7 +122,7 @@ export class Drivetrain {
             return;
 
         /* Neutral */
-        this.gear = 0; 
+        this.gear = 0;
 
         if (ratioRatio > 1)
             this.downShift = true;

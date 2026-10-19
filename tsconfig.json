@@ -2,9 +2,10 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "commonjs",
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "Node",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,

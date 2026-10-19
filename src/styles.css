@@ -1,0 +1,575 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -10%, #17181d 0%, #0a0a0c 60%) fixed, #0a0a0c;
+    color: #e8e8ec;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* dat.gui: dock bottom-right so it doesn't cover the tachometer */
+body > .dg.ac > .dg.main {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    float: none;
+}
+
+/* ---------- Start / loading screen ---------- */
+
+.start-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    text-align: center;
+    padding: 24px;
+}
+
+.start-screen h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.2em;
+}
+
+.subtitle {
+    margin: 0;
+    color: #8a8a93;
+    letter-spacing: 0.2em;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.start-btn {
+    margin-top: 16px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.2em;
+    padding: 18px 56px;
+    color: #fff;
+    background: transparent;
+    border: 2px solid #e10600;
+    border-radius: 6px;
+    cursor: pointer;
+    transform: skewX(-8deg);
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.start-btn:hover {
+    background: #e10600;
+    box-shadow: 0 0 24px rgba(225, 6, 0, 0.45);
+}
+
+.loading {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress {
+    width: min(420px, 70vw);
+    height: 10px;
+    background: #15151a;
+    border: 1px solid #2c2c34;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e10600, #ff7a00);
+    transition: width 0.15s ease-out;
+}
+
+.loading-text {
+    margin: 0;
+    color: #9a9aa3;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.1em;
+}
+
+/* ---------- Dashboard ---------- */
+
+.dashboard {
+    flex: 1;
+    width: min(1060px, 94vw);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 32px;
+    padding: 32px 0;
+}
+
+/* Shift lights */
+
+.shift-lights {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.led {
+    width: 36px;
+    height: 20px;
+    border-radius: 4px;
+    background: #15151a;
+    border: 1px solid #26262c;
+    transform: skewX(-18deg);
+}
+
+.led.green.on { background: #2eff5e; box-shadow: 0 0 14px 2px rgba(46, 255, 94, 0.55); }
+.led.red.on   { background: #ff2222; box-shadow: 0 0 14px 2px rgba(255, 34, 34, 0.55); }
+.led.blue.on  { background: #29a8ff; box-shadow: 0 0 14px 2px rgba(41, 168, 255, 0.55); }
+
+.shift-lights.flash .led.on {
+    animation: led-blink 0.16s infinite;
+}
+
+@keyframes led-blink {
+    50% { opacity: 0.1; }
+}
+
+/* RPM bar */
+
+.tach {
+    position: relative;
+    height: 58px;
+    background: #101014;
+    border: 1px solid #26262c;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.tach-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        #178a43 0%,
+        #45b62e 55%,
+        #d7c100 72%,
+        #ef7d00 86%,
+        #ff1f1f 100%);
+}
+
+.tach-redzone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: transparent;
+}
+
+.tach-ticks {
+    position: absolute;
+    inset: 0;
+}
+
+.tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.tick span {
+    position: absolute;
+    bottom: 3px;
+    left: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.65);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pedals (vertical throttle / brake bars, Assetto Corsa style) */
+
+.pedals {
+    display: flex;
+    gap: 10px;
+    align-self: center;
+}
+
+.pedal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pedal-bar {
+    width: 26px;
+    height: 118px;
+    background: #101014;
+    border: 1px solid #26262c;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+}
+
+.pedal-fill {
+    width: 100%;
+}
+
+.pedal-fill.thr {
+    background: #2eff5e;
+}
+
+.pedal-fill.brk {
+    background: #ff2222;
+    transition: height 0.1s linear;
+}
+
+.pedal-label {
+    margin-top: 6px;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: #8a8a93;
+}
+
+/* Gear + speed cluster */
+
+.cluster {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 28px;
+}
+
+.value-box {
+    width: 270px;
+    background: #101014;
+    border: 1px solid #26262c;
+    border-radius: 10px;
+    padding: 20px 0;
+    text-align: center;
+    transform: skewX(-4deg);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.value-box > * {
+    transform: skewX(4deg);
+}
+
+.value-box-label {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: #8a8a93;
+}
+
+.value-box-value {
+    font-size: 4rem;
+    line-height: 1;
+    font-weight: 800;
+    font-style: italic;
+    font-variant-numeric: tabular-nums;
+}
+
+.value-box-value--large {
+    font-size: 8rem;
+}
+
+/* Controls panel (tutorial style) */
+
+.controls-panel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    padding: 18px 16px 26px;
+}
+
+.control-card {
+    background: #101014;
+    border: 1px solid #26262c;
+    border-radius: 8px;
+    padding: 14px 22px;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-keys {
+    display: flex;
+    gap: 6px;
+}
+
+.control-card kbd {
+    min-width: 42px;
+    padding: 9px 12px;
+    text-align: center;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e8e8ec;
+    background: linear-gradient(#24242c, #15151a);
+    border: 1px solid #3a3a44;
+    border-bottom-width: 3px;
+    border-radius: 6px;
+}
+
+.control-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+}
+
+.control-hint {
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: #8a8a93;
+}
+
+/* Config select */
+
+.config-select {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.config-select-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #8a8a93;
+}
+
+.config-select-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.config-select select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #101014;
+    border: 1px solid #2c2c34;
+    border-radius: 6px;
+    color: #e8e8ec;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 40px 10px 16px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.config-select select:hover:not(:disabled),
+.config-select select:focus-visible {
+    border-color: #e10600;
+    box-shadow: 0 0 12px rgba(225, 6, 0, 0.25);
+}
+
+.config-select select:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.config-select-arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a8a93;
+    pointer-events: none;
+}
+
+/* Dashboard header */
+
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.dash-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.2em;
+    color: #5a5a63;
+}
+
+/* Touch driving controls */
+
+.mobile-controls {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    .controls-panel {
+        display: none;
+    }
+
+    .dashboard {
+        width: min(100% - 28px, 520px);
+        justify-content: flex-start;
+        gap: 22px;
+        padding: 22px 0 230px;
+    }
+
+    .dash-header {
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dash-title {
+        max-width: 54%;
+        font-size: 0.68rem;
+        line-height: 1.5;
+    }
+
+    .cluster {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .value-box {
+        width: min(36vw, 170px);
+        min-height: 112px;
+        padding: 12px 0;
+    }
+
+    .value-box-value {
+        font-size: 3rem;
+    }
+
+    .value-box-value--large {
+        font-size: 5.5rem;
+    }
+
+    .pedal-bar {
+        height: 90px;
+    }
+
+    .mobile-controls {
+        position: fixed;
+        z-index: 2147483647;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: grid;
+        grid-template-columns: minmax(112px, 0.85fr) minmax(160px, 1.15fr);
+        align-items: stretch;
+        gap: 10px;
+        padding: 14px max(18px, env(safe-area-inset-right))
+            max(18px, env(safe-area-inset-bottom));
+        background: linear-gradient(180deg,
+            rgba(10, 10, 12, 0.12), rgba(10, 10, 12, 0.96) 25%);
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .mobile-controls button {
+        color: #f5f5f7;
+        font: inherit;
+        font-weight: 800;
+        border: 1px solid #393941;
+        cursor: pointer;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-pedal {
+        height: 118px;
+        width: 100%;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        padding: 16px 8px;
+        font-size: 0.82rem;
+        letter-spacing: 0.12em;
+        box-shadow: inset 0 -5px rgba(0, 0, 0, 0.28);
+        transition: filter 0.08s, transform 0.08s;
+    }
+
+    .mobile-pedal:active {
+        transform: translateY(3px);
+        filter: brightness(1.3);
+        box-shadow: inset 0 -2px rgba(0, 0, 0, 0.28);
+    }
+
+    .mobile-pedal--brake {
+        background: linear-gradient(160deg, #c82626, #751717);
+    }
+
+    .mobile-pedal--gas {
+        background: linear-gradient(160deg, #30964c, #14552a);
+    }
+
+    .mobile-shifter {
+        display: grid;
+        grid-template-rows: repeat(2, minmax(112px, 1fr));
+        gap: 10px;
+    }
+
+    .mobile-pedals {
+        display: grid;
+        grid-template-rows: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .mobile-shift {
+        min-height: 0;
+        border-radius: 8px;
+        background: #202027;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1px;
+        box-shadow: inset 0 -3px rgba(0, 0, 0, 0.35);
+    }
+
+    .mobile-shift:active {
+        background: #34343d;
+        transform: translateY(2px);
+    }
+
+    .mobile-shift span {
+        font-size: 1.6rem;
+        line-height: 1;
+    }
+
+    .mobile-shift small {
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+    }
+}
